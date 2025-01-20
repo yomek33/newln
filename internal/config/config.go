@@ -17,11 +17,9 @@ type Config struct {
 }
 
 const (
-	// expires cookie expiration time
 	SessionDuration = time.Hour * 10
 )
 
-// LoadConfig loads configuration from environment variables
 func LoadConfig() (*Config, error) {
 	if err := godotenv.Load(); err != nil {
 		return nil, fmt.Errorf("error loading .env file: %w", err)

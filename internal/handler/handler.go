@@ -29,6 +29,7 @@ func (h *Handlers) SetDefault(e *echo.Echo) {
 
 func (h *Handlers) SetAPIRoutes(e *echo.Echo) {
 	api := e.Group("/api")
+	api.Use(JWTMiddleware)
 	api.POST("/register", h.UserHandler.RegisterUser)
 	api.POST("/login", h.UserHandler.LoginUser)
 }
