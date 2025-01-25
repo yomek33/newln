@@ -7,8 +7,8 @@ import (
 // CreateEnumTypes creates all required ENUM types in the database
 func CreateEnumTypes(db *gorm.DB) error {
 	enumDefinitions := []struct {
-		Name       string   // ENUM型の名前
-		Values     []string // ENUM型に含める値
+		Name   string   // ENUM型の名前
+		Values []string // ENUM型に含める値
 	}{
 		{"material_status", []string{"draft", "published", "archived"}},
 		{"importance_level", []string{"low", "medium", "high"}},

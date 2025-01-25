@@ -13,14 +13,17 @@ import (
 )
 
 type Handlers struct {
-	UserHandler *UserHandler
+	UserHandler     *UserHandler
 	MaterialHandler *MaterialHandler
+
+	jwtSecret []byte
 }
 
-func NewHandler(services *services.Services) *Handlers {
+func NewHandler(services *services.Services, jwtSecret []byte) *Handlers {
 	return &Handlers{
-		UserHandler: NewUserHandler(services.UserService),
+		UserHandler:     NewUserHandler(services.UserService),
 		MaterialHandler: NewMaterialHandler(services.MaterialService, services.PhraseService),
+		jwtSecret:       jwtSecret,
 	}
 }
 func (h *Handlers) SetDefault(e *echo.Echo) {
@@ -31,17 +34,17 @@ func (h *Handlers) SetDefault(e *echo.Echo) {
 
 func (h *Handlers) SetAPIRoutes(e *echo.Echo) {
 	api := e.Group("/api")
-	api.Use(JWTMiddleware)
+	api.Use(h.JWTMiddleware)
 	api.POST("/register", h.UserHandler.RegisterUser)
 	api.POST("/login", h.UserHandler.LoginUser)
 
 	materialRoutes := api.Group("/materials")
 	materialRoutes.POST("", h.MaterialHandler.CreateMaterial)
 	materialRoutes.GET("", h.MaterialHandler.GetAllMaterials)
-	materialRoutes.GET("/:id", h.MaterialHandler.GetMaterialByID)
-	materialRoutes.PUT("/:id", h.MaterialHandler.UpdateMaterial)
-	materialRoutes.DELETE("/:id", h.MaterialHandler.DeleteMaterial)
-	materialRoutes.GET("/:id/status", h.MaterialHandler.CheckMaterialStatus)
+	materialRoutes.GET("/:ulid", h.MaterialHandler.GetMaterialByID)
+	materialRoutes.PUT("/:ulid", h.MaterialHandler.UpdateMaterial)
+	materialRoutes.DELETE("/:ulid", h.MaterialHandler.DeleteMaterial)
+	materialRoutes.GET("/:ulid/status", h.MaterialHandler.CheckMaterialStatus)
 	// materialRoutes.GET("/:id/phrases", h.MaterialHandler.GetProcessedPhrases)
 	// materialRoutes.GET("/:id/chats", h.MaterialHandler.GetChatByMaterialID)
 }

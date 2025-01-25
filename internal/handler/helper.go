@@ -15,53 +15,62 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-var jwtSecret = []byte("your-secret-key")
 func getUserIDFromContext(c echo.Context) (uuid.UUID, error) {
-    userIDStr, ok := c.Get("UserID").(string)
-    if !ok || userIDStr == "" {
-        logger.Errorf(ErrInvalidUserToken)
-        return uuid.Nil, errors.New(ErrInvalidUserToken)
-    }
+	userIDStr, ok := c.Get("UserID").(string)
+	if !ok || userIDStr == "" {
+		logger.Errorf(ErrInvalidUserToken)
+		return uuid.Nil, errors.New(ErrInvalidUserToken)
+	}
 
-    userID, err := uuid.Parse(userIDStr)
-    if err != nil {
-        logger.Errorf("Invalid UUID format: %v", err)
-        return uuid.Nil, errors.New("invalid UUID format")
-    }
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		logger.Errorf("Invalid UUID format: %v", err)
+		return uuid.Nil, errors.New("invalid UUID format")
+	}
 
-    return userID, nil // 有効な UserID を返す
+	return userID, nil // 有効な UserID を返す
 }
-
-func JWTMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+func (h *Handlers) JWTMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		authHeader := c.Request().Header.Get("Authorization")
 		if !strings.HasPrefix(authHeader, "Bearer ") {
-			return echo.NewHTTPError(http.StatusUnauthorized, ErrMissingOrInvalidToken)
+			fmt.Println("JWTMiddleware: missing or invalid token format")
+			return echo.NewHTTPError(http.StatusUnauthorized, "missing or invalid token format")
 		}
 
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				fmt.Println("JWTMiddleware: unexpected signing method")
 				return nil, echo.NewHTTPError(http.StatusUnauthorized, "unexpected signing method")
 			}
-			return jwtSecret, nil
+			return h.jwtSecret, nil
 		})
 
-		if err != nil || !token.Valid {
-			return echo.NewHTTPError(http.StatusUnauthorized, ErrInvalidToken)
+		if err != nil {
+			fmt.Printf("JWTMiddleware: JWT parse error: %v %v\n", err, token)
+			return echo.NewHTTPError(http.StatusUnauthorized, "invalid token")
+		}
+
+		if !token.Valid {
+			fmt.Println("JWTMiddleware: invalid token")
+			return echo.NewHTTPError(http.StatusUnauthorized, "invalid token")
 		}
 
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok {
-			return echo.NewHTTPError(http.StatusUnauthorized, ErrInvalidClaims)
+			fmt.Println("JWTMiddleware: invalid claims structure")
+			return echo.NewHTTPError(http.StatusUnauthorized, "invalid claims structure")
 		}
 
 		userID, ok := claims["sub"].(string)
 		if !ok || userID == "" {
-			return echo.NewHTTPError(http.StatusUnauthorized, ErrInvalidClaims)
+			fmt.Println("JWTMiddleware: missing or invalid 'sub' claim")
+			return echo.NewHTTPError(http.StatusUnauthorized, "missing or invalid 'sub' claim")
 		}
 
-		c.Set("UserID", userID) // コンテキストにUserIDを格納
+		// コンテキストにUserIDを格納
+		c.Set("UserID", userID)
 
 		return next(c)
 	}

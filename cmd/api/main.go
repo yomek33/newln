@@ -52,7 +52,7 @@ func main() {
 
 	stores := stores.NewStores(app.DB)
 	services := services.NewServices(stores)
-	h := handler.NewHandler(services)
+	h := handler.NewHandler(services, cfg.JwtSecret)
 
 	h.SetDefault(e)
 	h.SetAPIRoutes(e)

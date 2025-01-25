@@ -14,6 +14,7 @@ type Config struct {
 	Port         string
 	GeminiAPIKey string
 	SupabaseURI  string
+	JwtSecret    []byte
 }
 
 const (
@@ -30,9 +31,11 @@ func LoadConfig() (*Config, error) {
 		Port:         os.Getenv("PORT"),
 		GeminiAPIKey: os.Getenv("GEMINI_API_KEY"),
 		SupabaseURI:  os.Getenv("SUPABASE_URI"),
+		JwtSecret:    []byte(os.Getenv("JWT_SECRET_KEY")),
 	}
+	fmt.Println(os.Getenv("JWT_SECRET_KEY"))
 
-	if cfg.Port == "" || cfg.UseSSL == "" || cfg.GeminiAPIKey == "" || cfg.SupabaseURI == "" {
+	if cfg.Port == "" || cfg.UseSSL == "" || cfg.GeminiAPIKey == "" || cfg.SupabaseURI == "" || cfg.JwtSecret == nil {
 		return nil, fmt.Errorf("one or more required environment variables are missing")
 	}
 

@@ -77,7 +77,7 @@ func (h *UserHandler) LoginUser(c echo.Context) error {
 	return c.JSON(http.StatusOK, echo.Map{"token": token})
 }
 
-//　util
+// 　util
 func validateEmail(email string) error {
 	_, err := mail.ParseAddress(email)
 	if err != nil {

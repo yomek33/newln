@@ -10,7 +10,7 @@ import (
 
 type PhraseStore interface {
 	CreatePhrase(phrase *models.Phrase) error
-	GetPhrasesByMaterialID(materialID uint) ([]models.Phrase, error)
+	GetPhrasesByMaterialID(materialULID string) ([]models.Phrase, error)
 }
 
 type phraseStore struct {
@@ -22,22 +22,22 @@ func NewPhraseStore(db *gorm.DB) PhraseStore {
 }
 
 func (s *phraseStore) CreatePhrase(phrase *models.Phrase) error {
-    if phrase == nil {
-        return errors.New("phrase cannot be nil")
-    }
+	if phrase == nil {
+		return errors.New("phrase cannot be nil")
+	}
 
-    if phrase.Text == "" {
-        return errors.New("phrase Text cannot be empty")
-    }
-    if phrase.MaterialID == 0 {
-        return errors.New("phrase MaterialID cannot be empty")
-    }
+	if phrase.Text == "" {
+		return errors.New("phrase Text cannot be empty")
+	}
+	if phrase.MaterialID == 0 {
+		return errors.New("phrase MaterialID cannot be empty")
+	}
 
-    return s.DB.Create(phrase).Error
+	return s.DB.Create(phrase).Error
 }
 
-func (s *phraseStore) GetPhrasesByMaterialID(materialID uint) ([]models.Phrase, error) {
+func (s *phraseStore) GetPhrasesByMaterialID(materialULID string) ([]models.Phrase, error) {
 	var phrases []models.Phrase
-	err := s.DB.Where("material_id = ?", materialID).Find(&phrases).Error
+	err := s.DB.Where("material_id = ?", materialULID).Find(&phrases).Error
 	return phrases, err
 }

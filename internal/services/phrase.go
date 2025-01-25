@@ -12,13 +12,13 @@ import (
 )
 
 type PhraseService interface {
-	GeneratePhrases(ctx context.Context, materialID uint, UserID uuid.UUID) ([]models.Phrase, error)
-	StorePhrases(materialID uint, phrases []models.Phrase) error
-	GetPhrasesByMaterialID(materialID uint) ([]models.Phrase, error)
+	GeneratePhrases(ctx context.Context, materialULID string, UserID uuid.UUID) ([]models.Phrase, error)
+	StorePhrases(materialULID string, phrases []models.Phrase) error
+	GetPhrasesByMaterialID(materialULID string) ([]models.Phrase, error)
 }
 
 type phraseService struct {
-	store           stores.PhraseStore
+	store         stores.PhraseStore
 	materialStore stores.MaterialStore
 	// GeminiClient    *gemini.Client
 }
@@ -31,20 +31,20 @@ func (s *phraseService) StorePhrase(phrase *models.Phrase) error {
 	return s.store.CreatePhrase(phrase)
 }
 
-func (s *phraseService) GetPhrasesByMaterialID(materialID uint) ([]models.Phrase, error) {
-	return s.store.GetPhrasesByMaterialID(materialID)
+func (s *phraseService) GetPhrasesByMaterialID(materialULID string) ([]models.Phrase, error) {
+	return s.store.GetPhrasesByMaterialID(materialULID)
 }
 
 func GeneratePhrases(topic string) ([]string, error) {
 	return []string{}, nil
 }
 
-func (s *phraseService) GeneratePhrases(ctx context.Context, materialID uint, UserID uuid.UUID) ([]models.Phrase, error) {
+func (s *phraseService) GeneratePhrases(ctx context.Context, materialULID string, UserID uuid.UUID) ([]models.Phrase, error) {
 	log.Println("Generating phrases")
 
-	log.Println("MaterialID", materialID)
+	log.Println("MaterialID", materialULID)
 	log.Println("UserID", UserID)
-	material, err := s.materialStore.GetMaterialByID(materialID, UserID)
+	material, err := s.materialStore.GetMaterialByID(materialULID, UserID)
 	log.Println("Material", material)
 	if err != nil {
 		log.Printf("Failed to fetch material: %v", err)
@@ -85,12 +85,12 @@ func (s *phraseService) GeneratePhrases(ctx context.Context, materialID uint, Us
 
 	phrases := []models.Phrase{
 		{
-			MaterialID: materialID,
+			MaterialID: material.ID,
 			Text:       "phrase1",
 			Importance: determineImportance("phrase1"),
 		},
 		{
-			MaterialID: materialID,
+			MaterialID: material.ID,
 			Text:       "phrase2",
 
 			Importance: determineImportance("phrase2"),
@@ -99,7 +99,7 @@ func (s *phraseService) GeneratePhrases(ctx context.Context, materialID uint, Us
 	return phrases, nil
 }
 
-func (s *phraseService) StorePhrases(materialID uint, phrases []models.Phrase) error {
+func (s *phraseService) StorePhrases(materialULID string, phrases []models.Phrase) error {
 	for _, phrase := range phrases {
 		if err := s.store.CreatePhrase(&phrase); err != nil {
 			return fmt.Errorf("failed to store phrase: %w", err)

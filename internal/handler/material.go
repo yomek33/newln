@@ -13,10 +13,9 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-
 type MaterialHandler struct {
-    MaterialService services.MaterialService
-    PhraseService   services.PhraseService
+	MaterialService services.MaterialService
+	PhraseService   services.PhraseService
 }
 
 func NewMaterialHandler(materialService services.MaterialService, phraseService services.PhraseService) *MaterialHandler {
@@ -43,39 +42,34 @@ func (h *MaterialHandler) CreateMaterial(c echo.Context) error {
 	ctx, cancel := context.WithTimeout(c.Request().Context(), 10*time.Second)
 	defer cancel()
 
-	id, err := h.MaterialService.CreateMaterial(&material)
+	createdMaterial, err := h.MaterialService.CreateMaterial(&material)
 	if err != nil {
 		logger.Errorf("Error creating material: %v, UserID: %v", err, UserID)
 		return respondWithError(c, http.StatusInternalServerError, ErrFailedCreateMaterial)
 	}
-
-	material.ID = id
-	go h.processMaterialAsync(ctx, material.ID, UserID)
+	go h.processMaterialAsync(ctx, createdMaterial.LocalULID, UserID)
 
 	logger.Info("Material created successfully")
 	return c.JSON(http.StatusCreated, map[string]interface{}{
 		"message": "Material created successfully",
-		"id":      material.ID,
+		"localId": createdMaterial.LocalULID,
 	})
 }
 
 func (h *MaterialHandler) GetMaterialByID(c echo.Context) error {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		return respondWithError(c, http.StatusBadRequest, ErrInvalidMaterialID)
-	}
+	ulid := c.Param("ulid")
 
 	UserID, err := getUserIDFromContext(c)
 	if err != nil {
 		return respondWithError(c, http.StatusUnauthorized, ErrInvalidUserToken)
 	}
 
-	material, err := h.MaterialService.GetMaterialByID(id, UserID)
+	material, err := h.MaterialService.GetMaterialByID(ulid, UserID)
 	if err != nil {
 		return respondWithError(c, http.StatusNotFound, ErrMaterialNotFound)
 	}
 
-	logger.Infof("Retrieved material MaterialID;%v", id)
+	logger.Infof("Retrieved material MaterialULID;%v", ulid)
 	return c.JSON(http.StatusOK, material)
 }
 
@@ -85,12 +79,8 @@ func (h *MaterialHandler) UpdateMaterial(c echo.Context) error {
 		return respondWithError(c, http.StatusUnauthorized, ErrInvalidUserToken)
 	}
 
-	materialID, err := parseUintParam(c, "id")
-	if err != nil {
-		return respondWithError(c, http.StatusBadRequest, ErrInvalidMaterialID)
-	}
-
-	material, err := h.MaterialService.GetMaterialByID(materialID, UserID)
+	ulid := c.Param("ulid")
+	material, err := h.MaterialService.GetMaterialByID(ulid, UserID)
 	if err != nil {
 		return respondWithError(c, http.StatusNotFound, ErrMaterialNotFound)
 	}
@@ -103,32 +93,30 @@ func (h *MaterialHandler) UpdateMaterial(c echo.Context) error {
 		return respondWithError(c, http.StatusForbidden, ErrForbiddenModify)
 	}
 
-	if err := h.MaterialService.UpdateMaterial(materialID, material); err != nil {
-		logger.Errorf("Failed to update material: %v, MaterialID: %v, UserID: %v", err, materialID, UserID)
+	if err := h.MaterialService.UpdateMaterial(ulid, material); err != nil {
+		logger.Errorf("Failed to update material: %v, MaterialID: %v, UserID: %v", err, ulid, UserID)
 		return respondWithError(c, http.StatusInternalServerError, ErrFailedUpdateMaterial)
 	}
 
-	logger.Infof("Updated material, MaterialID: %v, UserID: %v", materialID, UserID)
+	logger.Infof("Updated material, MaterialID: %v, UserID: %v", ulid, UserID)
 	return c.JSON(http.StatusOK, material)
 }
 
 func (h *MaterialHandler) DeleteMaterial(c echo.Context) error {
-	materialID, err := parseUintParam(c, "id")
-	if err != nil {
-		return respondWithError(c, http.StatusBadRequest, ErrInvalidID)
-	}
+
+	ulid := c.Param("ulid")
 
 	UserID, err := getUserIDFromContext(c)
 	if err != nil {
 		return respondWithError(c, http.StatusUnauthorized, ErrInvalidUserToken)
 	}
 
-	if err := h.MaterialService.DeleteMaterial(materialID, UserID); err != nil {
-		logger.Errorf("Failed to delete material: %v, MaterialID: %v, UserID: %v", err, materialID, UserID)
+	if err := h.MaterialService.DeleteMaterial(ulid, UserID); err != nil {
+		logger.Errorf("Failed to delete material: %v, MaterialID: %v, UserID: %v", err, ulid, UserID)
 		return respondWithError(c, http.StatusInternalServerError, ErrFailedDeleteMaterial)
 	}
 
-	logger.Infof("Deleted material, MaterialID: %v, UserID: %v", materialID, UserID)
+	logger.Infof("Deleted material, MaterialID: %v, UserID: %v", ulid, UserID)
 	return c.NoContent(http.StatusNoContent)
 }
 
@@ -151,37 +139,34 @@ func (h *MaterialHandler) GetAllMaterials(c echo.Context) error {
 }
 
 func (h *MaterialHandler) CheckMaterialStatus(c echo.Context) error {
-	materialID, err := parseUintParam(c, "id")
-	if err != nil {
-		return respondWithError(c, http.StatusBadRequest, ErrInvalidMaterialID)
-	}
+	ulid := c.Param("ulid")
 
-	status, err := h.MaterialService.GetMaterialStatus(materialID)
+	status, err := h.MaterialService.GetMaterialStatus(ulid)
 	if err != nil {
-		logger.Errorf("Failed to get material status: %v, MaterialID: %v", err, materialID)
+		logger.Errorf("Failed to get material status: %v, MaterialID: %v", err, ulid)
 		return respondWithError(c, http.StatusInternalServerError, err.Error())
 	}
 
-	logger.Infof("Checked material status, MaterialID: %v, Status: %v", materialID, status)
+	logger.Infof("Checked material status, MaterialID: %v, Status: %v", ulid, status)
 	return c.JSON(http.StatusOK, map[string]string{"status": status})
 }
 
-func (h *MaterialHandler) processMaterialAsync(ctx context.Context, materialID uint, UserID uuid.UUID) {
-	h.MaterialService.UpdateMaterialStatus(materialID, "processing")
+func (h *MaterialHandler) processMaterialAsync(ctx context.Context, materialULID string, UserID uuid.UUID) {
+	h.MaterialService.UpdateMaterialStatus(materialULID, "processing")
 
-	phrases, err := h.PhraseService.GeneratePhrases(ctx, materialID, UserID)
+	phrases, err := h.PhraseService.GeneratePhrases(ctx, materialULID, UserID)
 	if err != nil {
-		logger.Errorf("Failed to generate phrases: %v, MaterialID: %v, UserID: %v", err, materialID, UserID)
-		h.MaterialService.UpdateMaterialStatus(materialID, "failed")
+		logger.Errorf("Failed to generate phrases: %v, materialULID: %v, UserID: %v", err, materialULID, UserID)
+		h.MaterialService.UpdateMaterialStatus(materialULID, "failed")
 		return
 	}
 
-	if err = h.PhraseService.StorePhrases(materialID, phrases); err != nil {
-		logger.Errorf("Failed to store phrases: %v, MaterialID: %v, UserID: %v", err, materialID, UserID)
-		h.MaterialService.UpdateMaterialStatus(materialID, "failed")
+	if err = h.PhraseService.StorePhrases(materialULID, phrases); err != nil {
+		logger.Errorf("Failed to store phrases: %v, materialULID: %v, UserID: %v", err, materialULID, UserID)
+		h.MaterialService.UpdateMaterialStatus(materialULID, "failed")
 		return
 	}
 
-	logger.Infof("Phrases generated and stored successfully, MaterialID: %v, UserID: %v", materialID, UserID)
-	h.MaterialService.UpdateMaterialStatus(materialID, "completed")
+	logger.Infof("Phrases generated and stored successfully, materialULID: %v, UserID: %v", materialULID, UserID)
+	h.MaterialService.UpdateMaterialStatus(materialULID, "completed")
 }

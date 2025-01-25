@@ -12,13 +12,13 @@ import (
 )
 
 type MaterialService interface {
-	CreateMaterial(material *models.Material) (uint, error)
-	GetMaterialByID(id uint, UserID uuid.UUID) (*models.Material, error)
-	UpdateMaterial(id uint, material *models.Material) error
-	DeleteMaterial(id uint, UserID uuid.UUID) error
+	CreateMaterial(material *models.Material) (*models.Material, error)
+	GetMaterialByID(ulid string, UserID uuid.UUID) (*models.Material, error)
+	UpdateMaterial(ulid string, material *models.Material) error
+	DeleteMaterial(ulid string, UserID uuid.UUID) error
 	GetAllMaterials(searchQuery string, UserID uuid.UUID) ([]models.Material, error)
-	UpdateMaterialStatus(id uint, status string) error
-	GetMaterialStatus(id uint) (string, error)
+	UpdateMaterialStatus(ulid string, status string) error
+	GetMaterialStatus(ulid string) (string, error)
 }
 
 type materialService struct {
@@ -35,47 +35,47 @@ var (
 	ErrMismatchedMaterialID = errors.New("mismatched material ID")
 )
 
-func (s *materialService) CreateMaterial(material *models.Material) (uint, error) {
+func (s *materialService) CreateMaterial(material *models.Material) (*models.Material, error) {
 	if material == nil {
-		return 0, errors.New("material cannot be nil")
+		return nil, errors.New("material cannot be nil")
 	}
 	return s.store.CreateMaterial(material)
 }
 
-func (s *materialService) GetMaterialByID(id uint, UserID uuid.UUID) (*models.Material, error) {
-	material, err := s.store.GetMaterialByID(id, UserID)
+func (s *materialService) GetMaterialByID(ulid string, UserID uuid.UUID) (*models.Material, error) {
+	material, err := s.store.GetMaterialByID(ulid, UserID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get material by ID: %w", err)
 	}
 	return material, nil
 }
 
-func (s *materialService) UpdateMaterial(id uint, material *models.Material) error {
+func (s *materialService) UpdateMaterial(ulid string, material *models.Material) error {
 	if material == nil {
 		return ErrMaterialNil
 	}
-	if id != material.ID {
+	if ulid != material.LocalULID {
 		return ErrMismatchedMaterialID
 	}
-	return s.store.UpdateMaterial(id, material)
+	return s.store.UpdateMaterial(ulid, material)
 }
 
-func (s *materialService) DeleteMaterial(id uint, UserID uuid.UUID) error {
-	return s.store.DeleteMaterial(id, UserID)
+func (s *materialService) DeleteMaterial(ulid string, UserID uuid.UUID) error {
+	return s.store.DeleteMaterial(ulid, UserID)
 }
 
 func (s *materialService) GetAllMaterials(searchQuery string, UserID uuid.UUID) ([]models.Material, error) {
 	return s.store.GetAllMaterials(searchQuery, UserID)
 }
 
-func (s *materialService) UpdateMaterialStatus(id uint, status string) error {
+func (s *materialService) UpdateMaterialStatus(ulid string, status string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return s.store.UpdateMaterialStatus(id, status)
+	return s.store.UpdateMaterialStatus(ulid, status)
 }
 
-func (s *materialService) GetMaterialStatus(id uint) (string, error) {
+func (s *materialService) GetMaterialStatus(ulid string) (string, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return s.store.GetMaterialStatus(id)
+	return s.store.GetMaterialStatus(ulid)
 }
