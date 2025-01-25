@@ -13,28 +13,20 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type MaterialHandler interface {
-	CreateMaterial(c echo.Context) error
-	GetMaterialByID(c echo.Context) error
-	UpdateMaterial(c echo.Context) error
-	DeleteMaterial(c echo.Context) error
-	GetAllMaterials(c echo.Context) error
-	CheckMaterialStatus(c echo.Context) error
+
+type MaterialHandler struct {
+    MaterialService services.MaterialService
+    PhraseService   services.PhraseService
 }
 
-type materialHandler struct {
-	services.MaterialService
-	services.PhraseService
-}
-
-func NewMaterialHandler(materialService services.MaterialService, phraseService services.PhraseService) MaterialHandler {
-	return &materialHandler{
+func NewMaterialHandler(materialService services.MaterialService, phraseService services.PhraseService) *MaterialHandler {
+	return &MaterialHandler{
 		MaterialService: materialService,
 		PhraseService:   phraseService,
 	}
 }
 
-func (h *materialHandler) CreateMaterial(c echo.Context) error {
+func (h *MaterialHandler) CreateMaterial(c echo.Context) error {
 	var material models.Material
 	if err := bindAndValidateMaterial(c, &material); err != nil {
 		return respondWithError(c, http.StatusBadRequest, err.Error())
@@ -67,7 +59,7 @@ func (h *materialHandler) CreateMaterial(c echo.Context) error {
 	})
 }
 
-func (h *materialHandler) GetMaterialByID(c echo.Context) error {
+func (h *MaterialHandler) GetMaterialByID(c echo.Context) error {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
 		return respondWithError(c, http.StatusBadRequest, ErrInvalidMaterialID)
@@ -87,7 +79,7 @@ func (h *materialHandler) GetMaterialByID(c echo.Context) error {
 	return c.JSON(http.StatusOK, material)
 }
 
-func (h *materialHandler) UpdateMaterial(c echo.Context) error {
+func (h *MaterialHandler) UpdateMaterial(c echo.Context) error {
 	UserID, err := getUserIDFromContext(c)
 	if err != nil {
 		return respondWithError(c, http.StatusUnauthorized, ErrInvalidUserToken)
@@ -120,7 +112,7 @@ func (h *materialHandler) UpdateMaterial(c echo.Context) error {
 	return c.JSON(http.StatusOK, material)
 }
 
-func (h *materialHandler) DeleteMaterial(c echo.Context) error {
+func (h *MaterialHandler) DeleteMaterial(c echo.Context) error {
 	materialID, err := parseUintParam(c, "id")
 	if err != nil {
 		return respondWithError(c, http.StatusBadRequest, ErrInvalidID)
@@ -140,7 +132,7 @@ func (h *materialHandler) DeleteMaterial(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-func (h *materialHandler) GetAllMaterials(c echo.Context) error {
+func (h *MaterialHandler) GetAllMaterials(c echo.Context) error {
 	searchQuery := c.QueryParam("search")
 
 	UserID, err := getUserIDFromContext(c)
@@ -158,7 +150,7 @@ func (h *materialHandler) GetAllMaterials(c echo.Context) error {
 	return c.JSON(http.StatusOK, materials)
 }
 
-func (h *materialHandler) CheckMaterialStatus(c echo.Context) error {
+func (h *MaterialHandler) CheckMaterialStatus(c echo.Context) error {
 	materialID, err := parseUintParam(c, "id")
 	if err != nil {
 		return respondWithError(c, http.StatusBadRequest, ErrInvalidMaterialID)
@@ -174,7 +166,7 @@ func (h *materialHandler) CheckMaterialStatus(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]string{"status": status})
 }
 
-func (h *materialHandler) processMaterialAsync(ctx context.Context, materialID uint, UserID uuid.UUID) {
+func (h *MaterialHandler) processMaterialAsync(ctx context.Context, materialID uint, UserID uuid.UUID) {
 	h.MaterialService.UpdateMaterialStatus(materialID, "processing")
 
 	phrases, err := h.PhraseService.GeneratePhrases(ctx, materialID, UserID)

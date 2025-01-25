@@ -14,11 +14,13 @@ import (
 
 type Handlers struct {
 	UserHandler *UserHandler
+	MaterialHandler *MaterialHandler
 }
 
 func NewHandler(services *services.Services) *Handlers {
 	return &Handlers{
 		UserHandler: NewUserHandler(services.UserService),
+		MaterialHandler: NewMaterialHandler(services.MaterialService, services.PhraseService),
 	}
 }
 func (h *Handlers) SetDefault(e *echo.Echo) {
@@ -32,6 +34,16 @@ func (h *Handlers) SetAPIRoutes(e *echo.Echo) {
 	api.Use(JWTMiddleware)
 	api.POST("/register", h.UserHandler.RegisterUser)
 	api.POST("/login", h.UserHandler.LoginUser)
+
+	materialRoutes := api.Group("/materials")
+	materialRoutes.POST("", h.MaterialHandler.CreateMaterial)
+	materialRoutes.GET("", h.MaterialHandler.GetAllMaterials)
+	materialRoutes.GET("/:id", h.MaterialHandler.GetMaterialByID)
+	materialRoutes.PUT("/:id", h.MaterialHandler.UpdateMaterial)
+	materialRoutes.DELETE("/:id", h.MaterialHandler.DeleteMaterial)
+	materialRoutes.GET("/:id/status", h.MaterialHandler.CheckMaterialStatus)
+	// materialRoutes.GET("/:id/phrases", h.MaterialHandler.GetProcessedPhrases)
+	// materialRoutes.GET("/:id/chats", h.MaterialHandler.GetChatByMaterialID)
 }
 
 func Echo() *echo.Echo {

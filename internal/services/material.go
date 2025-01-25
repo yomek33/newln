@@ -26,6 +26,10 @@ type materialService struct {
 	mu    sync.Mutex
 }
 
+func NewMaterialService(s stores.MaterialStore) MaterialService {
+	return &materialService{store: s}
+}
+
 var (
 	ErrMaterialNil          = errors.New("material cannot be nil")
 	ErrMismatchedMaterialID = errors.New("mismatched material ID")

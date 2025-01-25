@@ -19,8 +19,12 @@ type PhraseService interface {
 
 type phraseService struct {
 	store           stores.PhraseStore
-	MaterialService *materialService
+	materialStore stores.MaterialStore
 	// GeminiClient    *gemini.Client
+}
+
+func NewPhraseService(s stores.PhraseStore, materialStore stores.MaterialStore) PhraseService {
+	return &phraseService{store: s, materialStore: materialStore}
 }
 
 func (s *phraseService) StorePhrase(phrase *models.Phrase) error {
@@ -40,7 +44,7 @@ func (s *phraseService) GeneratePhrases(ctx context.Context, materialID uint, Us
 
 	log.Println("MaterialID", materialID)
 	log.Println("UserID", UserID)
-	material, err := s.MaterialService.GetMaterialByID(materialID, UserID)
+	material, err := s.materialStore.GetMaterialByID(materialID, UserID)
 	log.Println("Material", material)
 	if err != nil {
 		log.Printf("Failed to fetch material: %v", err)
