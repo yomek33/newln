@@ -47,7 +47,7 @@ func (s *materialStore) CreateMaterial(material *models.Material) (*models.Mater
 func (s *materialStore) GetMaterialByID(ulid string, UserID uuid.UUID) (*models.Material, error) {
 	log.Println("store material id", ulid)
 	var material models.Material
-	err := s.DB.Where("local_ulid = ? AND user_id = ?", ulid, UserID).Preload("Phrases").Preload("Chats").First(&material).Error
+	err := s.DB.Where("local_ul_id = ? AND user_id = ?", ulid, UserID).Preload("Phrases").Preload("Chats").First(&material).Error
 	return &material, err
 }
 
@@ -62,7 +62,7 @@ func (s *materialStore) UpdateMaterial(ulid string, material *models.Material) e
 }
 
 func (s *materialStore) DeleteMaterial(ulid string, UserID uuid.UUID) error {
-	return s.DB.Where("local_ulid = ? AND user_id = ?", ulid, UserID).Delete(&models.Material{}).Error
+	return s.DB.Where("local_ul_id = ? AND user_id = ?", ulid, UserID).Delete(&models.Material{}).Error
 }
 
 func (s *materialStore) GetAllMaterials(searchQuery string, UserID uuid.UUID) ([]models.Material, error) {
@@ -79,11 +79,11 @@ func (s *materialStore) UpdateMaterialStatus(ulid string, status string) error {
 	if status != models.StatusDraft && status != models.StatusArchived && status != models.StatusPublished {
 		return errors.New("invalid status")
 	}
-	return s.DB.Model(&models.Material{}).Where("local_ulid = ?", ulid).Update("status", status).Error
+	return s.DB.Model(&models.Material{}).Where("local_ul_id = ?", ulid).Update("status", status).Error
 }
 
 func (s *materialStore) GetMaterialStatus(ulid string) (string, error) {
 	var material models.Material
-	err := s.DB.Select("status").Where("local_ulid = ?", ulid).First(&material).Error
+	err := s.DB.Select("status").Where("local_ul_id = ?", ulid).First(&material).Error
 	return material.Status, err
 }

@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+	"github.com/oklog/ulid/v2"
 )
 
 type MaterialHandler struct {
@@ -23,6 +24,16 @@ func NewMaterialHandler(materialService services.MaterialService, phraseService 
 		MaterialService: materialService,
 		PhraseService:   phraseService,
 	}
+}
+
+type MaterialResponse struct {
+	ID        uint      
+	LocalULID string   
+	Content   string    
+	Title    string   
+	Status    string    
+	CreatedAt time.Time 
+	UpdatedAt time.Time 
 }
 
 func (h *MaterialHandler) CreateMaterial(c echo.Context) error {
@@ -38,6 +49,7 @@ func (h *MaterialHandler) CreateMaterial(c echo.Context) error {
 
 	material.UserID = UserID
 	material.Status = "draft"
+	material.LocalULID = ulid.Make().String()
 
 	ctx, cancel := context.WithTimeout(c.Request().Context(), 10*time.Second)
 	defer cancel()
@@ -49,11 +61,17 @@ func (h *MaterialHandler) CreateMaterial(c echo.Context) error {
 	}
 	go h.processMaterialAsync(ctx, createdMaterial.LocalULID, UserID)
 
-	logger.Info("Material created successfully")
-	return c.JSON(http.StatusCreated, map[string]interface{}{
-		"message": "Material created successfully",
-		"localId": createdMaterial.LocalULID,
-	})
+	response := MaterialResponse{
+		LocalULID: createdMaterial.LocalULID,
+		Content:   createdMaterial.Content,
+		Title: createdMaterial.Title,
+		Status:    createdMaterial.Status,
+		CreatedAt: createdMaterial.CreatedAt,
+		UpdatedAt: createdMaterial.UpdatedAt,
+	}
+
+	logger.Infof("Material created successfully: %+v", createdMaterial)
+	return c.JSON(http.StatusCreated, response)
 }
 
 func (h *MaterialHandler) GetMaterialByID(c echo.Context) error {
