@@ -18,7 +18,6 @@ type PhraseStore interface {
 	UpdatePhraseListGenerateStatus(phraseListID uint, status string) error
 }
 
-
 type phraseStore struct {
 	DB *gorm.DB
 }
@@ -43,13 +42,13 @@ func (s *phraseStore) CreatePhraseList(phraseList *models.PhraseList) error {
 }
 
 func (s *phraseStore) GetPhraseListByMaterialULID(materialULID string) ([]models.PhraseList, error) {
-    var phraseLists []models.PhraseList
+	var phraseLists []models.PhraseList
 
-    err := s.DB.Joins("JOIN materials ON materials.id = phrase_lists.material_id").
-        Where("materials.local_ulid = ?", materialULID).
-        Find(&phraseLists).Error
+	err := s.DB.Joins("JOIN materials ON materials.id = phrase_lists.material_id").
+		Where("materials.local_ulid = ?", materialULID).
+		Find(&phraseLists).Error
 
-    return phraseLists, err
+	return phraseLists, err
 }
 
 // TODO: `PhraseList` が存在しない場合、新規作成するのがあっても良い
@@ -103,7 +102,7 @@ func (s *phraseStore) GetPhrasesByMaterialID(materialULID string) ([]models.Phra
 	return phrases, err
 }
 
-func (s *phraseStore) BulkInsertPhrases( phrases []models.Phrase) error {
+func (s *phraseStore) BulkInsertPhrases(phrases []models.Phrase) error {
 	return s.DB.CreateInBatches(phrases, 100).Error
 }
 

@@ -15,7 +15,7 @@ func CreateEnumTypes(db *gorm.DB) error {
 		{"word_level", []string{"beginner", "intermediate", "advanced"}},
 		{"progress_status", []string{"not_started", "in_progress", "completed"}},
 		{"sender_type", []string{"user", "system", "bot"}},
-				{"word_list_status", []string{"pending", "processing", "completed", "failed"}},
+		{"word_list_status", []string{"pending", "processing", "completed", "failed"}},
 		{"phrase_list_status", []string{"pending", "processing", "completed", "failed"}},
 	}
 

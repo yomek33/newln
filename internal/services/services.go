@@ -6,7 +6,7 @@ type Services struct {
 	UserService     UserService
 	MaterialService MaterialService
 	PhraseService   PhraseService
-	WordService	 WordService
+	WordService     WordService
 }
 
 func NewServices(stores *stores.Stores) *Services {
@@ -14,6 +14,6 @@ func NewServices(stores *stores.Stores) *Services {
 		UserService:     NewUserService(stores.UserStore),
 		MaterialService: NewMaterialService(stores.MaterialStore),
 		PhraseService:   NewPhraseService(stores.PhraseStore, stores.MaterialStore),
-		WordService:    NewWordService(stores.WordStore, stores.MaterialStore),
+		WordService:     NewWordService(stores.WordStore, stores.MaterialStore),
 	}
 }

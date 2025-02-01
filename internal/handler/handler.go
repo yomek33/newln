@@ -16,14 +16,14 @@ import (
 type Handlers struct {
 	UserHandler     *UserHandler
 	MaterialHandler *MaterialHandler
-	NewSSEManager  *sse.SSEManager
-	jwtSecret []byte
+	NewSSEManager   *sse.SSEManager
+	jwtSecret       []byte
 }
 
 func NewHandler(services *services.Services, jwtSecret []byte) *Handlers {
 	return &Handlers{
 		UserHandler:     NewUserHandler(services.UserService),
-		MaterialHandler: NewMaterialHandler(services.MaterialService, services.PhraseService, services.WordService, sse.NewSSEManager()),
+		MaterialHandler: NewMaterialHandler(services.MaterialService, services.PhraseService, services.WordService),
 		jwtSecret:       jwtSecret,
 	}
 }

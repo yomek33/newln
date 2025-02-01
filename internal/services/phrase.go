@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"newln/internal/models"
-	"newln/internal/sse"
 	"newln/internal/stores"
 )
 
@@ -18,7 +18,6 @@ type PhraseService interface {
 	CreatePhraseList(phraseList *models.PhraseList) error
 	BulkInsertPhrases(phrases []models.Phrase) error
 	UpdatePhraseListGenerateStatus(phraseListID uint, status string) error
-	HandlePhraseGeneration(ctx context.Context, materialID uint, sseManager *sse.SSEManager) error
 }
 
 //必要なメソッド
@@ -39,8 +38,8 @@ func NewPhraseService(s stores.PhraseStore, materialStore stores.MaterialStore) 
 
 func (s *phraseService) CreatePhraseList(phraseList *models.PhraseList) error {
 	if phraseList == nil {
-        return fmt.Errorf("phraseList cannot be nil")
-    }
+		return fmt.Errorf("phraseList cannot be nil")
+	}
 
 	return s.store.CreatePhraseList(phraseList)
 }
@@ -106,11 +105,12 @@ func (s *phraseService) GeneratePhrases(ctx context.Context, materialID uint) ([
 			Importance: determineImportance("phrase1"),
 		},
 		{
-			Text:       "phrase2",
+			Text: "phrase2",
 
 			Importance: determineImportance("phrase2"),
 		},
 	}
+	time.Sleep(5 * time.Second)
 	return phrases, nil
 }
 
@@ -128,55 +128,10 @@ func determineImportance(_ string) string {
 	return "high"
 }
 
-
 func (s *phraseService) BulkInsertPhrases(phrases []models.Phrase) error {
 	return s.store.BulkInsertPhrases(phrases)
 }
 
 func (s *phraseService) UpdatePhraseListGenerateStatus(phraseListID uint, status string) error {
 	return s.store.UpdatePhraseListGenerateStatus(phraseListID, status)
-}
-
-
-func (s *phraseService) HandlePhraseGeneration(ctx context.Context, materialID uint, sseManager *sse.SSEManager) error {
-	phraseList := models.PhraseList{
-		MaterialID:    materialID,
-		Title:         "Default Phrase List",
-		GenerateStatus: "pending",
-	}
-
-	// ✅ `PhraseList` を作成
-	if err := s.CreatePhraseList(&phraseList); err != nil {
-		return fmt.Errorf("failed to create phrase list: %w", err)
-	}
-	s.UpdatePhraseListGenerateStatus(phraseList.ID, "processing")
-	sseManager.Broadcast(fmt.Sprintf(`{"phrase_list_id":%d, "status":"processing"}`, phraseList.ID))
-
-	// ✅ `GeneratePhrases` を実行
-	phrases, err := s.GeneratePhrases(ctx, materialID)
-	if err != nil {
-		s.UpdatePhraseListGenerateStatus(phraseList.ID, "failed")
-		sseManager.Broadcast(fmt.Sprintf(`{"phrase_list_id":%d, "status":"failed"}`, phraseList.ID))
-		return fmt.Errorf("failed to generate phrases: %w", err)
-	}
-	if len(phrases) == 0 {
-		s.UpdatePhraseListGenerateStatus(phraseList.ID, "failed")
-		sseManager.Broadcast(fmt.Sprintf(`{"phrase_list_id":%d, "status":"failed"}`, phraseList.ID))
-		return fmt.Errorf("no phrases generated")
-	}
-
-	// ✅ `BulkInsertPhrases`
-	for i := range phrases {
-		phrases[i].PhraseListID = phraseList.ID
-	}
-	if err := s.BulkInsertPhrases(phrases); err != nil {
-		s.UpdatePhraseListGenerateStatus(phraseList.ID, "failed")
-		sseManager.Broadcast(fmt.Sprintf(`{"phrase_list_id":%d, "status":"failed"}`, phraseList.ID))
-		return fmt.Errorf("failed to store phrases: %w", err)
-	}
-
-	// ✅ 成功時
-	s.UpdatePhraseListGenerateStatus(phraseList.ID, "completed")
-	sseManager.Broadcast(fmt.Sprintf(`{"phrase_list_id":%d, "status":"completed"}`, phraseList.ID))
-	return nil
 }
