@@ -17,11 +17,12 @@ const (
 
 type MaterialStore interface {
 	CreateMaterial(material *models.Material) (*models.Material, error)
-	GetMaterialByID(ulid string, UserID uuid.UUID) (*models.Material, error)
+	GetMaterialByULID(ulid string, UserID uuid.UUID) (*models.Material, error)
+	GetMaterialByID(id uint) (*models.Material, error)
 	UpdateMaterial(ulid string, material *models.Material) error
 	DeleteMaterial(ulid string, UserID uuid.UUID) error
 	GetAllMaterials(searchQuery string, UserID uuid.UUID) ([]models.Material, error)
-	UpdateMaterialStatus(ulid string, status string) error
+	UpdateMaterialStatus(id uint, status string) error
 	GetMaterialStatus(ulid string) (string, error)
 }
 
@@ -44,11 +45,31 @@ func (s *materialStore) CreateMaterial(material *models.Material) (*models.Mater
 	return material, nil
 }
 
-func (s *materialStore) GetMaterialByID(ulid string, UserID uuid.UUID) (*models.Material, error) {
+func (s *materialStore) GetMaterialByULID(ulid string, userID uuid.UUID) (*models.Material, error) {
 	log.Println("store material id", ulid)
 	var material models.Material
-	err := s.DB.Where("local_ul_id = ? AND user_id = ?", ulid, UserID).Preload("Phrases").Preload("Chats").First(&material).Error
+
+	err := s.DB.
+		Preload("WordLists.Words").
+		Preload("PhraseLists.Phrases").         
+		Preload("ChatLists.Chats").    
+		Where("local_ul_id = ? AND user_id = ?", ulid, userID).
+		First(&material).
+		Error
+
+	if err != nil {
+		log.Println("Error fetching material:", err)
+	}
+
 	return &material, err
+}
+
+
+func (s *materialStore) GetMaterialByID(id uint) (*models.Material, error) {
+	var material models.Material
+	err := s.DB.Preload("WordLists").Preload("PhraseLists").Preload("ChatLists").First(&material, id).Error
+	return &material, err
+
 }
 
 func (s *materialStore) UpdateMaterial(ulid string, material *models.Material) error {
@@ -75,11 +96,11 @@ func (s *materialStore) GetAllMaterials(searchQuery string, UserID uuid.UUID) ([
 	return materials, err
 }
 
-func (s *materialStore) UpdateMaterialStatus(ulid string, status string) error {
+func (s *materialStore) UpdateMaterialStatus(id uint, status string) error {
 	if status != models.StatusDraft && status != models.StatusArchived && status != models.StatusPublished {
 		return errors.New("invalid status")
 	}
-	return s.DB.Model(&models.Material{}).Where("local_ul_id = ?", ulid).Update("status", status).Error
+	return s.DB.Model(&models.Material{}).Where("id = ?", id).Update("status", status).Error
 }
 
 func (s *materialStore) GetMaterialStatus(ulid string) (string, error) {

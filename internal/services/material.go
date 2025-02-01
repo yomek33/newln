@@ -13,11 +13,11 @@ import (
 
 type MaterialService interface {
 	CreateMaterial(material *models.Material) (*models.Material, error)
-	GetMaterialByID(ulid string, UserID uuid.UUID) (*models.Material, error)
+	GetMaterialByULID(ulid string, UserID uuid.UUID) (*models.Material, error)
 	UpdateMaterial(ulid string, material *models.Material) error
 	DeleteMaterial(ulid string, UserID uuid.UUID) error
 	GetAllMaterials(searchQuery string, UserID uuid.UUID) ([]models.Material, error)
-	UpdateMaterialStatus(ulid string, status string) error
+	UpdateMaterialStatus(materialID uint, status string) error
 	GetMaterialStatus(ulid string) (string, error)
 }
 
@@ -42,8 +42,8 @@ func (s *materialService) CreateMaterial(material *models.Material) (*models.Mat
 	return s.store.CreateMaterial(material)
 }
 
-func (s *materialService) GetMaterialByID(ulid string, UserID uuid.UUID) (*models.Material, error) {
-	material, err := s.store.GetMaterialByID(ulid, UserID)
+func (s *materialService) GetMaterialByULID(ulid string, UserID uuid.UUID) (*models.Material, error) {
+	material, err := s.store.GetMaterialByULID(ulid, UserID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get material by ID: %w", err)
 	}
@@ -68,10 +68,10 @@ func (s *materialService) GetAllMaterials(searchQuery string, UserID uuid.UUID) 
 	return s.store.GetAllMaterials(searchQuery, UserID)
 }
 
-func (s *materialService) UpdateMaterialStatus(ulid string, status string) error {
+func (s *materialService) UpdateMaterialStatus(id uint, status string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return s.store.UpdateMaterialStatus(ulid, status)
+	return s.store.UpdateMaterialStatus(id, status)
 }
 
 func (s *materialService) GetMaterialStatus(ulid string) (string, error) {

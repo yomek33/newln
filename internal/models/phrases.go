@@ -6,7 +6,14 @@ import (
 
 type Phrase struct {
 	gorm.Model
-	MaterialID uint   `gorm:"not null;index"`
+	PhraseListID uint   `gorm:"not null;index"`
 	Text       string `gorm:"type:varchar(255);not null"`
 	Importance string `gorm:"type:importance_level;default:'medium'"`
+}
+type PhraseList struct {
+    gorm.Model
+    MaterialID uint `gorm:"type:uint;not null;index"`
+    Title      string    `gorm:"type:varchar(255);not null"`
+    Phrases    []Phrase  `gorm:"foreignKey:PhraseListID;constraint:OnDelete:CASCADE"`
+	GenerateStatus string `gorm:"type:phrase_list_status;default:'pending'"`
 }

@@ -18,7 +18,7 @@ type Material struct {
 	Title     string    `gorm:"type:varchar(255);not null"`
 	Content   string    `gorm:"type:text"`
 	Status    string    `gorm:"type:material_status;default:'draft'"`
-	Words     []Word    `gorm:"foreignKey:MaterialID;constraint:OnDelete:CASCADE"`
-	Phrases   []Phrase  `gorm:"foreignKey:MaterialID;constraint:OnDelete:CASCADE"`
-	Chats     []Chat    `gorm:"foreignKey:MaterialID;constraint:OnDelete:CASCADE"`
+    WordLists    []WordList  `gorm:"foreignKey:MaterialID;constraint:OnDelete:CASCADE"`
+    PhraseLists  []PhraseList `gorm:"foreignKey:MaterialID;constraint:OnDelete:CASCADE"`
+    ChatLists    []ChatList  `gorm:"foreignKey:MaterialID;constraint:OnDelete:CASCADE"`
 }

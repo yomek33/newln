@@ -2,12 +2,15 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	"newln/internal/logger"
 	"newln/internal/models"
 	"newln/internal/services"
+	"newln/internal/sse"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -17,13 +20,17 @@ import (
 type MaterialHandler struct {
 	MaterialService services.MaterialService
 	PhraseService   services.PhraseService
+	WordService     services.WordService
+	SSEManager	  *sse.SSEManager
 }
 
-func NewMaterialHandler(materialService services.MaterialService, phraseService services.PhraseService) *MaterialHandler {
-	return &MaterialHandler{
-		MaterialService: materialService,
-		PhraseService:   phraseService,
-	}
+func NewMaterialHandler(materialService services.MaterialService, phraseService services.PhraseService, wordService services.WordService, sseManager *sse.SSEManager) *MaterialHandler {
+    return &MaterialHandler{
+        MaterialService: materialService,
+        PhraseService:   phraseService,
+        WordService:     wordService,
+        SSEManager:      sseManager,
+    }
 }
 
 type MaterialResponse struct {
@@ -59,7 +66,7 @@ func (h *MaterialHandler) CreateMaterial(c echo.Context) error {
 		logger.Errorf("Error creating material: %v, UserID: %v", err, UserID)
 		return respondWithError(c, http.StatusInternalServerError, ErrFailedCreateMaterial)
 	}
-	go h.processMaterialAsync(ctx, createdMaterial.LocalULID, UserID)
+	go h.processMaterialAsync(ctx, createdMaterial.ID, UserID)
 
 	response := MaterialResponse{
 		LocalULID: createdMaterial.LocalULID,
@@ -82,7 +89,7 @@ func (h *MaterialHandler) GetMaterialByID(c echo.Context) error {
 		return respondWithError(c, http.StatusUnauthorized, ErrInvalidUserToken)
 	}
 
-	material, err := h.MaterialService.GetMaterialByID(ulid, UserID)
+	material, err := h.MaterialService.GetMaterialByULID(ulid, UserID)
 	if err != nil {
 		return respondWithError(c, http.StatusNotFound, ErrMaterialNotFound)
 	}
@@ -98,7 +105,7 @@ func (h *MaterialHandler) UpdateMaterial(c echo.Context) error {
 	}
 
 	ulid := c.Param("ulid")
-	material, err := h.MaterialService.GetMaterialByID(ulid, UserID)
+	material, err := h.MaterialService.GetMaterialByULID(ulid, UserID)
 	if err != nil {
 		return respondWithError(c, http.StatusNotFound, ErrMaterialNotFound)
 	}
@@ -169,22 +176,43 @@ func (h *MaterialHandler) CheckMaterialStatus(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]string{"status": status})
 }
 
-func (h *MaterialHandler) processMaterialAsync(ctx context.Context, materialULID string, UserID uuid.UUID) {
-	h.MaterialService.UpdateMaterialStatus(materialULID, "processing")
 
-	phrases, err := h.PhraseService.GeneratePhrases(ctx, materialULID, UserID)
-	if err != nil {
-		logger.Errorf("Failed to generate phrases: %v, materialULID: %v, UserID: %v", err, materialULID, UserID)
-		h.MaterialService.UpdateMaterialStatus(materialULID, "failed")
+func (h *MaterialHandler) processMaterialAsync(ctx context.Context, materialID uint, userID uuid.UUID) {
+	h.MaterialService.UpdateMaterialStatus(materialID, "processing")
+	h.SSEManager.Broadcast(fmt.Sprintf(`{"material_id":%d, "status":"processing"}`, materialID))
+
+	var wg sync.WaitGroup
+	errChan := make(chan error, 2)
+
+	// Phraseを生成する
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if err := h.PhraseService.HandlePhraseGeneration(ctx, materialID, h.SSEManager); err != nil {
+			errChan <- err
+		}
+	}()
+
+	// Wordを生成する
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if err := h.WordService.HandleWordGeneration(ctx, materialID, h.SSEManager); err != nil {
+			errChan <- err
+		}
+	}()
+
+	wg.Wait()
+	close(errChan)
+
+	for err := range errChan {
+		logger.Error(fmt.Errorf("Error: %v, materialID: %v, userID: %v", err, materialID, userID))
+		h.MaterialService.UpdateMaterialStatus(materialID, "failed")
+		h.SSEManager.Broadcast(fmt.Sprintf(`{"material_id":%d, "status":"failed"}`, materialID))
 		return
 	}
 
-	if err = h.PhraseService.StorePhrases(materialULID, phrases); err != nil {
-		logger.Errorf("Failed to store phrases: %v, materialULID: %v, UserID: %v", err, materialULID, UserID)
-		h.MaterialService.UpdateMaterialStatus(materialULID, "failed")
-		return
-	}
-
-	logger.Infof("Phrases generated and stored successfully, materialULID: %v, UserID: %v", materialULID, UserID)
-	h.MaterialService.UpdateMaterialStatus(materialULID, "completed")
+	logger.Infof("Processing completed, materialID: %v, userID: %v", materialID, userID)
+	h.MaterialService.UpdateMaterialStatus(materialID, "completed")
+	h.SSEManager.Broadcast(fmt.Sprintf(`{"material_id":%d, "status":"completed"}`, materialID))
 }
