@@ -24,6 +24,7 @@ type MaterialStore interface {
 	GetAllMaterials(searchQuery string, UserID uuid.UUID) ([]models.Material, error)
 	UpdateMaterialStatus(id uint, status string) error
 	GetMaterialStatus(ulid string) (string, error)
+	CheckAllCompleted(materialID uint) (bool, error)
 }
 
 type materialStore struct {
@@ -106,4 +107,30 @@ func (s *materialStore) GetMaterialStatus(ulid string) (string, error) {
 	var material models.Material
 	err := s.DB.Select("status").Where("local_ul_id = ?", ulid).First(&material).Error
 	return material.Status, err
+}
+
+func (s *materialStore) CheckAllCompleted(materialID uint) (bool, error) {
+	var count int64
+
+	err := s.DB.Model(&models.PhraseList{}).
+		Where("material_id = ? AND generate_status != ?", materialID, "completed").
+		Count(&count).Error
+	if err != nil {
+		return false, err
+	}
+	if count > 0 {
+		return false, nil
+	}
+
+	err = s.DB.Model(&models.WordList{}).
+		Where("material_id = ? AND generate_status != ?", materialID, "completed").
+		Count(&count).Error
+	if err != nil {
+		return false, err
+	}
+	if count > 0 {
+		return false, nil
+	}
+
+	return true, nil
 }
