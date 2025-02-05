@@ -48,23 +48,23 @@ func TestGenerateSchema(t *testing.T) {
 		},
 	}
 
-for _, tt := range tests {
-    t.Run(tt.name, func(t *testing.T) {
-        result := GenerateSchema(tt.input)
-        if !reflect.DeepEqual(result, tt.expected) {
-            t.Errorf("GenerateSchema() = %v, expected %v", result, tt.expected)
-        } else {
-            t.Logf("GenerateSchema() = %v, as expected", result)
-        }
-        schemaJSON, err := json.MarshalIndent(result, "", "  ")
-        if err != nil {
-            t.Errorf("Error marshaling schema: %v", err)
-            return
-        }
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := GenerateSchema(tt.input)
+			if !reflect.DeepEqual(result, tt.expected) {
+				t.Errorf("GenerateSchema() = %v, expected %v", result, tt.expected)
+			} else {
+				t.Logf("GenerateSchema() = %v, as expected", result)
+			}
+			schemaJSON, err := json.MarshalIndent(result, "", "  ")
+			if err != nil {
+				t.Errorf("Error marshaling schema: %v", err)
+				return
+			}
 
-        t.Log(string(schemaJSON))
-    })
-}
+			t.Log(string(schemaJSON))
+		})
+	}
 }
 
 func TestGoTypeToGenaiType(t *testing.T) {

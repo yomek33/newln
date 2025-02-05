@@ -50,9 +50,9 @@ func (c *RealGeminiClient) GenerateJsonContent(ctx context.Context, prompt strin
 
 	config := genai.GenerateContentConfig{
 		MaxOutputTokens:  genai.Ptr(int64(8192)),
-		TopK:            genai.Ptr(float64(40)),
-		TopP:            genai.Ptr(0.95),
-		Temperature:     genai.Ptr(float64(1)),
+		TopK:             genai.Ptr(float64(40)),
+		TopP:             genai.Ptr(0.95),
+		Temperature:      genai.Ptr(float64(1)),
 		ResponseMIMEType: "application/json",
 	}
 

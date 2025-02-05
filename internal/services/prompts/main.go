@@ -46,20 +46,19 @@ func main() {
 	}
 
 	geminiConfig := genai.GenerateContentConfig{
-		MaxOutputTokens: genai.Ptr(int64(8192)),
-		TopK:            genai.Ptr(float64(40)),
-		TopP:            genai.Ptr(0.95),
-		Temperature:     genai.Ptr(float64(1)),
+		MaxOutputTokens:  genai.Ptr(int64(8192)),
+		TopK:             genai.Ptr(float64(40)),
+		TopP:             genai.Ptr(0.95),
+		Temperature:      genai.Ptr(float64(1)),
 		ResponseMIMEType: "application/json",
 	}
-	
 
 	switch *fileFlag {
 	case "generate_phrase.txt":
-			respSchema := &genai.Schema{
-				Type: genai.TypeArray,
-				Items: &genai.Schema{
-					Type: genai.TypeObject,
+		respSchema := &genai.Schema{
+			Type: genai.TypeArray,
+			Items: &genai.Schema{
+				Type: genai.TypeObject,
 				Properties: map[string]*genai.Schema{
 					"id": {
 						Type: genai.TypeInteger,
@@ -85,7 +84,7 @@ func main() {
 		geminiConfig.ResponseSchema = respSchema
 
 	}
-	res, err :=  client.Models.GenerateContent(ctx, "gemini-2.0-flash-exp", genai.Text(prompt), &geminiConfig)
+	res, err := client.Models.GenerateContent(ctx, "gemini-2.0-flash-exp", genai.Text(prompt), &geminiConfig)
 	if err != nil {
 		log.Fatalf("failed to generate content: %v", err)
 	}
@@ -110,10 +109,9 @@ func printResponse(resp *genai.GenerateContentResponse) {
 }
 
 const sampleText = "[WASHINGTON — Booz Allen Hamilton deployed a generative AI large language model on the International Space Station using a Hewlett Packard Enterprise advanced edge computer designed for in-orbit experiments.\n" +
-    "The generative AI large language model (LLM) has been in operation since mid-July as part of an experiment, Booz Allen announced Aug. 1.\n" +
-    "A generative AI large language model is a sophisticated type of artificial intelligence designed to understand and generate human language. The LLM at the space station is intended to help astronauts address queries and resolve issues.\n" +
-    "“Right now, astronauts train for many hours to be able to conduct repairs of machinery and onboard systems. However, having the ability to ask the instruction manuals questions and receive relevant and rapid responses could augment their efforts so they can fix problems at an accelerated pace,” said Dan Wald, principal AI solutions architect for space applications at Booz Allen.\n" +
-    "The Hewlett Packard Enterprise (HPE) Spaceborne Computer-2, launched in February 2021, provides the infrastructure for advanced experiments, including AI and machine learning in space. By processing data in orbit and sending only the insights back to Earth, it reduces data transmission times.\n" +
-    "Spaceborne Computer-2 has completed multiple research experiments in fields such as DNA sequencing, image processing, natural disaster recovery, 3D printing and 5G technology.\n" +
-    "“Generative AI in space is truly the new frontier,” said Chris Bogdan, executive vice president at Booz Allen and leader of the firm’s space business. “Booz Allen is committed to pushing the boundaries of what is possible with AI and other mission-critical technologies in space.”]"
-
+	"The generative AI large language model (LLM) has been in operation since mid-July as part of an experiment, Booz Allen announced Aug. 1.\n" +
+	"A generative AI large language model is a sophisticated type of artificial intelligence designed to understand and generate human language. The LLM at the space station is intended to help astronauts address queries and resolve issues.\n" +
+	"“Right now, astronauts train for many hours to be able to conduct repairs of machinery and onboard systems. However, having the ability to ask the instruction manuals questions and receive relevant and rapid responses could augment their efforts so they can fix problems at an accelerated pace,” said Dan Wald, principal AI solutions architect for space applications at Booz Allen.\n" +
+	"The Hewlett Packard Enterprise (HPE) Spaceborne Computer-2, launched in February 2021, provides the infrastructure for advanced experiments, including AI and machine learning in space. By processing data in orbit and sending only the insights back to Earth, it reduces data transmission times.\n" +
+	"Spaceborne Computer-2 has completed multiple research experiments in fields such as DNA sequencing, image processing, natural disaster recovery, 3D printing and 5G technology.\n" +
+	"“Generative AI in space is truly the new frontier,” said Chris Bogdan, executive vice president at Booz Allen and leader of the firm’s space business. “Booz Allen is committed to pushing the boundaries of what is possible with AI and other mission-critical technologies in space.”]"
