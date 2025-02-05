@@ -30,7 +30,6 @@ func NewWordService(s stores.WordStore, materialStore stores.MaterialStore) Word
 	return &wordService{store: s, materialStore: materialStore}
 }
 
-// ✅ `WordList` を作成
 func (s *wordService) CreateWordList(wordList *models.WordList) error {
 	if wordList == nil {
 		return fmt.Errorf("wordList cannot be nil")
@@ -38,22 +37,18 @@ func (s *wordService) CreateWordList(wordList *models.WordList) error {
 	return s.store.CreateWordList(wordList)
 }
 
-// ✅ `MaterialID` から `Words` を取得
 func (s *wordService) GetWordsByMaterialID(materialULID string) ([]models.Word, error) {
 	return s.store.GetWordsByMaterialID(materialULID)
 }
 
-// ✅ `MaterialID` から `WordList` を取得
 func (s *wordService) GetWordListByMaterialULID(materialULID string) ([]models.WordList, error) {
 	return s.store.GetWordListByMaterialULID(materialULID)
 }
 
-// ✅ `Words` を一括挿入
 func (s *wordService) BulkInsertWords(words []models.Word) error {
 	return s.store.BulkInsertWords(words)
 }
 
-// ✅ `Words` を生成（ダミーデータとして2つ）
 func (s *wordService) GenerateWords(ctx context.Context, materialID uint) ([]models.Word, error) {
 	log.Println("Generating words")
 
@@ -92,12 +87,10 @@ func (s *wordService) UpdateWordListGenerateStatus(wordListID uint, status strin
 	return s.store.UpdateWordListGenerateStatus(wordListID, status)
 }
 
-// ✅ 重要度を決定（ダミー）
 func determineWordImportance(_ string) string {
 	return "high"
 }
 
-// ✅ レベルを決定（ダミー）
 func determineWordLevel(_ string) string {
 	return "beginner"
 }
