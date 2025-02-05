@@ -4,10 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"newln/internal/logger"
-	"newln/internal/models"
 	"strconv"
 	"strings"
+
+	"github.com/yomek33/newln/internal/logger"
+	"github.com/yomek33/newln/internal/models"
 
 	"github.com/go-playground/validator"
 	"github.com/golang-jwt/jwt"

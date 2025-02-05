@@ -3,10 +3,11 @@ package handler
 import (
 	"fmt"
 	"net/http"
-	"newln/internal/services"
-	"newln/internal/sse"
 
-	"newln/internal/logger"
+	"github.com/yomek33/newln/internal/services"
+	"github.com/yomek33/newln/internal/sse"
+
+	"github.com/yomek33/newln/internal/logger"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"

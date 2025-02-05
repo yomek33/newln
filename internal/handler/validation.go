@@ -3,8 +3,9 @@ package handler
 import (
 	"errors"
 	"fmt"
-	"newln/internal/models"
 	"strings"
+
+	"github.com/yomek33/newln/internal/models"
 
 	"github.com/go-playground/validator"
 )

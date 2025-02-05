@@ -2,9 +2,10 @@ package services_test
 
 import (
 	"errors"
-	"newln/internal/models"
-	"newln/internal/services"
 	"testing"
+
+	"github.com/yomek33/newln/internal/models"
+	"github.com/yomek33/newln/internal/services"
 
 	"github.com/stretchr/testify/assert"
 )

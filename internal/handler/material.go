@@ -8,9 +8,9 @@ import (
 	"sync"
 	"time"
 
-	"newln/internal/logger"
-	"newln/internal/models"
-	"newln/internal/services"
+	"github.com/yomek33/newln/internal/logger"
+	"github.com/yomek33/newln/internal/models"
+	"github.com/yomek33/newln/internal/services"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"

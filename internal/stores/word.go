@@ -3,7 +3,7 @@ package stores
 import (
 	"errors"
 
-	"newln/internal/models"
+	"github.com/yomek33/newln/internal/models"
 
 	"gorm.io/gorm"
 )

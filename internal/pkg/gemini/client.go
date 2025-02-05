@@ -6,8 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/google/generative-ai-go/genai"
-	"google.golang.org/api/option"
+	"google.golang.org/genai"
 )
 
 type GeminiService interface {
@@ -32,15 +31,14 @@ type RealGeminiClient struct {
 }
 
 func NewRealGeminiClient(ctx context.Context, apiKey string) (*RealGeminiClient, error) {
-	client, err := genai.NewClient(ctx, option.WithAPIKey(apiKey))
+	client, err := genai.NewClient(ctx, &genai.ClientConfig{
+		APIKey:  apiKey,
+		Backend: genai.BackendGeminiAPI,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create genai client: %w", err)
 	}
 	return &RealGeminiClient{client: client}, nil
-}
-
-func (c *RealGeminiClient) Close() {
-	c.client.Close()
 }
 
 func (c *RealGeminiClient) IsMock() bool {
@@ -48,10 +46,17 @@ func (c *RealGeminiClient) IsMock() bool {
 }
 
 func (c *RealGeminiClient) GenerateJsonContent(ctx context.Context, prompt string) (json.RawMessage, error) {
-	model := c.client.GenerativeModel("gemini-1.5-flash")
-	model.ResponseMIMEType = "application/json"
+	model := "gemini-1.5-flash"
 
-	res, err := model.GenerateContent(ctx, genai.Text(prompt))
+	config := genai.GenerateContentConfig{
+		MaxOutputTokens:  genai.Ptr(int64(8192)),
+		TopK:            genai.Ptr(float64(40)),
+		TopP:            genai.Ptr(0.95),
+		Temperature:     genai.Ptr(float64(1)),
+		ResponseMIMEType: "application/json",
+	}
+
+	res, err := c.client.Models.GenerateContent(ctx, model, genai.Text(prompt), &config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate content: %w", err)
 	}
@@ -60,18 +65,7 @@ func (c *RealGeminiClient) GenerateJsonContent(ctx context.Context, prompt strin
 		return nil, fmt.Errorf("no content generated")
 	}
 
-	partStr, ok := res.Candidates[0].Content.Parts[0].(genai.Text)
-	if !ok {
-		return nil, fmt.Errorf("response is not a valid string")
-	}
+	partStr := res.Candidates[0].Content.Parts[0].Text
 
 	return json.RawMessage(partStr), nil
-}
-
-func DecodeJsonContent[T any](data json.RawMessage) ([]T, error) {
-	var output []T
-	if err := json.Unmarshal(data, &output); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal JSON: %w", err)
-	}
-	return output, nil
 }

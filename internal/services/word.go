@@ -6,9 +6,9 @@ import (
 	"log"
 	"time"
 
-	"newln/internal/models"
-	"newln/internal/sse"
-	"newln/internal/stores"
+	"github.com/yomek33/newln/internal/models"
+	"github.com/yomek33/newln/internal/sse"
+	"github.com/yomek33/newln/internal/stores"
 )
 
 type WordService interface {

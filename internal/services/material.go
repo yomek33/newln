@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"sync"
 
-	"newln/internal/models"
-	"newln/internal/stores"
+	"github.com/yomek33/newln/internal/models"
+	"github.com/yomek33/newln/internal/stores"
 
 	"github.com/google/uuid"
 )

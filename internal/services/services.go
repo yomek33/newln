@@ -1,8 +1,8 @@
 package services
 
 import (
-	"newln/internal/pkg/gemini"
-	"newln/internal/stores"
+	"github.com/yomek33/newln/internal/pkg/gemini"
+	"github.com/yomek33/newln/internal/stores"
 )
 
 type Services struct {
@@ -16,7 +16,7 @@ func NewServices(stores *stores.Stores, geminiService gemini.GeminiService) *Ser
 	return &Services{
 		UserService:     NewUserService(stores.UserStore),
 		MaterialService: NewMaterialService(stores.MaterialStore),
-		PhraseService:   NewPhraseService(stores.PhraseStore, stores.MaterialStore),
+		PhraseService:   NewPhraseService(stores.PhraseStore, stores.MaterialStore, geminiService),
 		WordService:     NewWordService(stores.WordStore, stores.MaterialStore),
 	}
 }

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"log"
 
-	"newln/internal/models"
+	"github.com/yomek33/newln/internal/models"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
