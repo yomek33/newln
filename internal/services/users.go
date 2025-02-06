@@ -2,8 +2,9 @@ package services
 
 import (
 	"errors"
-	"newln/internal/models"
-	"newln/internal/stores"
+
+	"github.com/yomek33/newln/internal/models"
+	"github.com/yomek33/newln/internal/stores"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"

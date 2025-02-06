@@ -17,6 +17,7 @@ func CreateEnumTypes(db *gorm.DB) error {
 		{"sender_type", []string{"user", "system", "bot"}},
 		{"word_list_status", []string{"pending", "processing", "completed", "failed"}},
 		{"phrase_list_status", []string{"pending", "processing", "completed", "failed"}},
+		{"difficulty_level", []string{"easy", "intermediate", "advance"}},
 	}
 
 	for _, enum := range enumDefinitions {

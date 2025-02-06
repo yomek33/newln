@@ -3,10 +3,11 @@ package handler
 import (
 	"fmt"
 	"net/http"
-	"newln/internal/services"
-	"newln/internal/sse"
 
-	"newln/internal/logger"
+	"github.com/yomek33/newln/internal/services"
+	"github.com/yomek33/newln/internal/sse"
+
+	"github.com/yomek33/newln/internal/logger"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -42,7 +43,7 @@ func (h *Handlers) SetAPIRoutes(e *echo.Echo) {
 	materialRoutes := api.Group("/materials")
 	materialRoutes.POST("", h.MaterialHandler.CreateMaterial)
 	materialRoutes.GET("", h.MaterialHandler.GetAllMaterials)
-	materialRoutes.GET("/:ulid", h.MaterialHandler.GetMaterialByID)
+	materialRoutes.GET("/:ulid", h.MaterialHandler.GetMaterialByULID)
 	materialRoutes.PUT("/:ulid", h.MaterialHandler.UpdateMaterial)
 	materialRoutes.DELETE("/:ulid", h.MaterialHandler.DeleteMaterial)
 	materialRoutes.GET("/:ulid/status", h.MaterialHandler.CheckMaterialStatus)

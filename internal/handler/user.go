@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"net/http"
 	"net/mail"
-	"newln/internal/services"
 	"strings"
 	"unicode"
+
+	"github.com/yomek33/newln/internal/services"
 
 	"github.com/labstack/echo/v4"
 )

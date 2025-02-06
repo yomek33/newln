@@ -1,6 +1,9 @@
 package services
 
-import "newln/internal/stores"
+import (
+	"github.com/yomek33/newln/internal/pkg/gemini"
+	"github.com/yomek33/newln/internal/stores"
+)
 
 type Services struct {
 	UserService     UserService
@@ -9,11 +12,11 @@ type Services struct {
 	WordService     WordService
 }
 
-func NewServices(stores *stores.Stores) *Services {
+func NewServices(stores *stores.Stores, geminiService gemini.GeminiService) *Services {
 	return &Services{
 		UserService:     NewUserService(stores.UserStore),
 		MaterialService: NewMaterialService(stores.MaterialStore),
-		PhraseService:   NewPhraseService(stores.PhraseStore, stores.MaterialStore),
+		PhraseService:   NewPhraseService(stores.PhraseStore, stores.MaterialStore, geminiService),
 		WordService:     NewWordService(stores.WordStore, stores.MaterialStore),
 	}
 }

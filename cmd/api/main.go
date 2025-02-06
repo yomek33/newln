@@ -1,16 +1,18 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
-	"newln/internal/config"
-	"newln/internal/models"
-	"newln/internal/models/migrations"
-	"newln/internal/services"
-	"newln/internal/stores"
 	"strconv"
 
-	"newln/internal/handler"
+	"github.com/yomek33/newln/internal/config"
+	"github.com/yomek33/newln/internal/handler"
+	"github.com/yomek33/newln/internal/models"
+	"github.com/yomek33/newln/internal/models/migrations"
+	"github.com/yomek33/newln/internal/pkg/gemini"
+	"github.com/yomek33/newln/internal/services"
+	"github.com/yomek33/newln/internal/stores"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -24,10 +26,17 @@ func main() {
 	// Initialize Echo
 	e := handler.Echo()
 	e.Validator = handler.NewValidator()
+
 	// Load configuration
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
+	}
+
+	// Gemini クライアントの作成 (Mock or Real)
+	geminiClient, err := gemini.NewGeminiService(context.Background(), cfg.GeminiAPIKey)
+	if err != nil {
+		log.Fatalf("Failed to initialize Gemini service: %v", err)
 	}
 
 	// Build DSN
@@ -38,25 +47,19 @@ func main() {
 		log.Fatalf("Failed to connect to the database: %v", err)
 	}
 
-	// geminiClient, err := gemini.NewClient(context.Background(), cfg.GeminiAPIKey)
-	// if err != nil || geminiClient == nil {
-	// 	log.Fatalf("Failed to create Gemini client: %v", err)
-	// }
-	// defer geminiClient.Close()
-
 	// Initialize application structure
-	app := &application{
-		DB: db,
-		//		GeminiClient: geminiClient,
-	}
+	app := &application{DB: db}
 
 	stores := stores.NewStores(app.DB)
-	services := services.NewServices(stores)
+	services := services.NewServices(stores, geminiClient)
+
 	h := handler.NewHandler(services, cfg.JwtSecret)
 
+	// ルート設定
 	h.SetDefault(e)
 	h.SetAPIRoutes(e)
 
+	// DBマイグレーション
 	if err := migrations.CreateEnumTypes(db); err != nil {
 		log.Fatalf("failed to create enums: %v", err)
 	}
@@ -73,6 +76,7 @@ func main() {
 		log.Fatalf("failed to run auto-migration: %v", err)
 	}
 
+	// サーバー起動
 	port, err := strconv.Atoi(cfg.Port)
 	if err != nil {
 		log.Fatalf("Invalid port number: %v", err)
