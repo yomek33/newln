@@ -19,12 +19,6 @@ type PhraseService interface {
 	UpdatePhraseListGenerateStatus(phraseListID uint, status string) error
 }
 
-//必要なメソッド
-// PhraseListを作成
-// PhraseListを取得
-// PhraseListを消す
-// TODO: PhraseListを更新
-
 type phraseService struct {
 	store         stores.PhraseStore
 	materialStore stores.MaterialStore

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 
+	"github.com/yomek33/newln/internal/logger"
 	"github.com/yomek33/newln/internal/models"
 
 	"github.com/google/uuid"
@@ -54,12 +55,12 @@ func (s *materialStore) GetMaterialByULID(ulid string, userID uuid.UUID) (*model
 		Preload("WordLists.Words").
 		Preload("PhraseLists.Phrases").
 		Preload("ChatLists.Chats").
-		Where("local_ul_id = ? AND user_id = ?", ulid, userID).
+		Where("ul_id = ? AND user_id = ?", ulid, userID).
 		First(&material).
 		Error
 
 	if err != nil {
-		log.Println("Error fetching material:", err)
+		logger.ErrorWithStack(err)
 	}
 
 	return &material, err
@@ -76,14 +77,14 @@ func (s *materialStore) UpdateMaterial(ulid string, material *models.Material) e
 	if material == nil {
 		return errors.New(ErrMaterialCannotBeNil)
 	}
-	if ulid != material.LocalULID {
+	if ulid != material.ULID {
 		return errors.New(ErrMismatchedMaterialID)
 	}
 	return s.DB.Model(&models.Material{}).Where("id = ?", ulid).Updates(material).Error
 }
 
 func (s *materialStore) DeleteMaterial(ulid string, UserID uuid.UUID) error {
-	return s.DB.Where("local_ul_id = ? AND user_id = ?", ulid, UserID).Delete(&models.Material{}).Error
+	return s.DB.Where("ul_id = ? AND user_id = ?", ulid, UserID).Delete(&models.Material{}).Error
 }
 
 func (s *materialStore) GetAllMaterials(searchQuery string, UserID uuid.UUID) ([]models.Material, error) {
@@ -105,7 +106,7 @@ func (s *materialStore) UpdateMaterialStatus(id uint, status string) error {
 
 func (s *materialStore) GetMaterialStatus(ulid string) (string, error) {
 	var material models.Material
-	err := s.DB.Select("status").Where("local_ul_id = ?", ulid).First(&material).Error
+	err := s.DB.Select("status").Where("ul_id = ?", ulid).First(&material).Error
 	return material.Status, err
 }
 

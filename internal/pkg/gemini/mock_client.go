@@ -4,20 +4,34 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
+	"google.golang.org/genai"
 )
 
-// MockGeminiClient（開発 & テスト用）
-type MockGeminiClient struct{}
-
-func NewMockGeminiClient() *MockGeminiClient {
-	return &MockGeminiClient{}
+// MockGeminiClient（テスト用）
+type MockGeminiClient struct {
+	ResponseData json.RawMessage
 }
 
-func (m *MockGeminiClient) GenerateJsonContent(ctx context.Context, prompt string) (json.RawMessage, error) {
+func NewMockGeminiClient(responseData ...json.RawMessage) *MockGeminiClient {
+	defaultResponse := json.RawMessage(`[]`)
+	if len(responseData) > 0 {
+		defaultResponse = responseData[0]
+	}
+
+	return &MockGeminiClient{
+		ResponseData: defaultResponse,
+	}
+}
+
+func (m *MockGeminiClient)GenerateJsonContent(ctx context.Context, prompt string, jsonSchema *genai.Schema) (json.RawMessage, error) {
 	fmt.Println("⚡ Using MOCK Gemini Service")
 
-	// 空の JSON データを返す
-	return json.RawMessage(`[]`), nil
+	// 設定されたモックレスポンスを返す
+	if len(m.ResponseData) == 0 {
+		return json.RawMessage(`[]`), nil
+	}
+	return m.ResponseData, nil
 }
 
 func (m *MockGeminiClient) IsMock() bool {

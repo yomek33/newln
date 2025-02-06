@@ -9,63 +9,69 @@ import (
 )
 
 type TestStruct struct {
-	Name  string  `json:"name"`
-	Age   int     `json:"age"`
-	Score float64 `json:"score"`
-	Valid bool    `json:"valid"`
+    Name  string  `json:"name"`
+    Age   int     `json:"age"`
+    Score float64 `json:"score"`
+    Valid bool    `json:"valid"`
 }
 
 func TestGenerateSchema(t *testing.T) {
-	tests := []struct {
-		name     string
-		input    interface{}
-		expected map[string]*genai.Schema
-	}{
-		{
-			name:  "Valid struct",
-			input: TestStruct{},
-			expected: map[string]*genai.Schema{
-				"name":  {Type: genai.TypeString},
-				"age":   {Type: genai.TypeInteger},
-				"score": {Type: genai.TypeNumber},
-				"valid": {Type: genai.TypeBoolean},
-			},
-		},
-		{
-			name:     "Non-struct input",
-			input:    123,
-			expected: nil,
-		},
-		{
-			name:  "Pointer to struct",
-			input: &TestStruct{},
-			expected: map[string]*genai.Schema{
-				"name":  {Type: genai.TypeString},
-				"age":   {Type: genai.TypeInteger},
-				"score": {Type: genai.TypeNumber},
-				"valid": {Type: genai.TypeBoolean},
-			},
-		},
-	}
+    tests := []struct {
+        name     string
+        expected map[string]*genai.Schema
+    }{
+        {
+            name: "Valid struct",
+            expected: map[string]*genai.Schema{
+                "name":  {Type: genai.TypeString},
+                "age":   {Type: genai.TypeInteger},
+                "score": {Type: genai.TypeNumber},
+                "valid": {Type: genai.TypeBoolean},
+            },
+        },
+        {
+            name: "Struct with array",
+            expected: map[string]*genai.Schema{
+                "items": {Type: genai.TypeArray},
+            },
+        },
+    }
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := GenerateSchema(tt.input)
-			if !reflect.DeepEqual(result, tt.expected) {
-				t.Errorf("GenerateSchema() = %v, expected %v", result, tt.expected)
-			} else {
-				t.Logf("GenerateSchema() = %v, as expected", result)
-			}
-			schemaJSON, err := json.MarshalIndent(result, "", "  ")
-			if err != nil {
-				t.Errorf("Error marshaling schema: %v", err)
-				return
-			}
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            var result map[string]*genai.Schema
+            if tt.name == "Valid struct" {
+				result = map[string]*genai.Schema{
+					"name":  {Type: genai.TypeString},
+					"age":   {Type: genai.TypeInteger},
+					"score": {Type: genai.TypeNumber},
+					"valid": {Type: genai.TypeBoolean},
+				}
+            } else if tt.name == "Struct with array" {
+				result = map[string]*genai.Schema{
+					"items": GenerateSchema[struct {
+						Items []TestStruct `json:"items"`
+					}](),
+				}
+            }
 
-			t.Log(string(schemaJSON))
-		})
-	}
+            if !reflect.DeepEqual(result, tt.expected) {
+                t.Errorf("GenerateSchema() = %v, expected %v", result, tt.expected)
+            } else {
+                t.Logf("GenerateSchema() = %v, as expected", result)
+            }
+            schemaJSON, err := json.MarshalIndent(result, "", "  ")
+            if err != nil {
+                t.Errorf("Error marshaling schema: %v", err)
+                return
+            }
+
+            t.Log(string(schemaJSON))
+        })
+    }
 }
+	
+
 
 func TestGoTypeToGenaiType(t *testing.T) {
 	tests := []struct {

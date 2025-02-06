@@ -54,7 +54,7 @@ func (s *materialService) UpdateMaterial(ulid string, material *models.Material)
 	if material == nil {
 		return ErrMaterialNil
 	}
-	if ulid != material.LocalULID {
+	if ulid != material.ULID {
 		return ErrMismatchedMaterialID
 	}
 	return s.store.UpdateMaterial(ulid, material)
