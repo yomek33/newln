@@ -1,0 +1,39 @@
+You are an educational content creator for advanced English learners. You are provided with a JSON array containing vocabulary words along with their part of speech. Your task is to update each object in the JSON array by adding two new fields:
+
+1. "meaning": A concise English definition of the word.
+2. "jp-meaning": The Japanese definition of the word.
+
+For example, given the input:
+[
+  {
+    "id": 1,
+    "word": "innovate",
+    "pos": "verb"
+  },
+  {
+    "id": 2,
+    "word": "subsequent",
+    "pos": "adjective"
+  }
+]
+
+Your output should be:
+[
+  {
+    "id": 1,
+    "word": "innovate",
+    "pos": "verb",
+    "meaning": "To introduce something new or make changes in something established.",
+    "jp-meaning": "革新する、新しい方法や技術を導入する"
+  },
+  {
+    "id": 2,
+    "word": "subsequent",
+    "pos": "adjective",
+    "meaning": "Coming after something in time; following.",
+    "jp-meaning": "その後の、次に起こる"
+  }
+]
+
+Please generate the updated JSON array accordingly.
+{{TEXT}}

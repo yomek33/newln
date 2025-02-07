@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"sync"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"github.com/yomek33/newln/internal/logger"
 	"github.com/yomek33/newln/internal/models"
 	"github.com/yomek33/newln/internal/services"
+	"golang.org/x/net/websocket"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -20,13 +22,15 @@ type MaterialHandler struct {
 	MaterialService services.MaterialService
 	PhraseService   services.PhraseService
 	WordService     services.WordService
+	jwtSecret       []byte
 }
 
-func NewMaterialHandler(materialService services.MaterialService, phraseService services.PhraseService, wordService services.WordService) *MaterialHandler {
+func NewMaterialHandler(materialService services.MaterialService, phraseService services.PhraseService, wordService services.WordService, jwtSecret []byte) *MaterialHandler {
 	return &MaterialHandler{
 		MaterialService: materialService,
 		PhraseService:   phraseService,
 		WordService:     wordService,
+		jwtSecret: jwtSecret,
 	}
 }
 
@@ -38,6 +42,8 @@ type MaterialResponse struct {
 	Status    string
 	CreatedAt time.Time
 	UpdatedAt time.Time
+			HasPendingPhraseList bool
+		HasPendingWordList	bool
 }
 
 func (h *MaterialHandler) CreateMaterial(c echo.Context) error {
@@ -54,6 +60,8 @@ func (h *MaterialHandler) CreateMaterial(c echo.Context) error {
 	material.UserID = UserID
 	material.Status = "draft"
 	material.ULID = ulid.Make().String()
+	material.HasPendingPhraseList = true
+	material.HasPendingWordList = true
 
 	ctx, cancel := context.WithTimeout(c.Request().Context(), 10*time.Second)
 	defer cancel()
@@ -63,7 +71,7 @@ func (h *MaterialHandler) CreateMaterial(c echo.Context) error {
 		logger.Errorf("Error creating material: %v, UserID: %v", err, UserID)
 		return respondWithError(c, http.StatusInternalServerError, ErrFailedCreateMaterial)
 	}
-	go h.processMaterialAsync(ctx, createdMaterial.ID, UserID)
+	go h.processMaterialAsync(ctx, createdMaterial.ID, createdMaterial.ULID, UserID)
 	logger.Infof("createdMaterial: %+v", createdMaterial)
 	response := MaterialResponse{
 		ULID:      material.ULID,
@@ -72,6 +80,8 @@ func (h *MaterialHandler) CreateMaterial(c echo.Context) error {
 		Status:    createdMaterial.Status,
 		CreatedAt: createdMaterial.CreatedAt,
 		UpdatedAt: createdMaterial.UpdatedAt,
+		HasPendingPhraseList: false,
+		HasPendingWordList:   false,
 	}
 
 	logger.Infof("Material created successfully: %+v", createdMaterial)
@@ -80,7 +90,6 @@ func (h *MaterialHandler) CreateMaterial(c echo.Context) error {
 
 func (h *MaterialHandler) GetMaterialByULID(c echo.Context) error {
 	ulid := c.Param("ulid")
-
 
 	UserID, err := getUserIDFromContext(c)
 	if err != nil {
@@ -126,7 +135,6 @@ func (h *MaterialHandler) UpdateMaterial(c echo.Context) error {
 }
 
 func (h *MaterialHandler) DeleteMaterial(c echo.Context) error {
-
 	ulid := c.Param("ulid")
 
 	UserID, err := getUserIDFromContext(c)
@@ -174,9 +182,12 @@ func (h *MaterialHandler) CheckMaterialStatus(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]string{"status": status})
 }
 
-func (h *MaterialHandler) processMaterialAsync(ctx context.Context, materialID uint, userID uuid.UUID) {
+func (h *MaterialHandler) processMaterialAsync(ctx context.Context, materialID uint, materialULID string, userID uuid.UUID) {
 	logger.Infof("🚀 Starting async processing for materialID: %v, userID: %v", materialID, userID)
 	h.MaterialService.UpdateMaterialStatus(materialID, "processing")
+
+	// ✅ ステータス変更を SSE で送信
+	h.MaterialService.PublishMaterialUpdate(materialULID, `{"status": "processing"}`)
 
 	// ✅ PhraseList を作成
 	phraseList := models.PhraseList{
@@ -196,109 +207,81 @@ func (h *MaterialHandler) processMaterialAsync(ctx context.Context, materialID u
 	// ✅ PhraseList を非同期で作成
 	wg.Add(1)
 	go func() {
-		logger.Infof("⏳ Creating PhraseList for materialID: %v", materialID)
 		defer wg.Done()
 		if err := h.PhraseService.CreatePhraseList(&phraseList); err != nil {
 			errChan <- fmt.Errorf("❌ failed to create phrase list: %w", err)
-		} else {
-			logger.Infof("✅ PhraseList created successfully, materialID: %v", materialID)
+			return
 		}
+		// ✅ 成功したら HasPendingPhraseList を false に更新
+		h.MaterialService.UpdateMaterialField(materialULID, "HasPendingPhraseList", false)
 	}()
 
 	// ✅ WordList を非同期で作成
 	wg.Add(1)
 	go func() {
-		logger.Infof("⏳ Creating WordList for materialID: %v", materialID)
 		defer wg.Done()
 		if err := h.WordService.CreateWordList(&wordList); err != nil {
 			errChan <- fmt.Errorf("❌ failed to create word list: %w", err)
-		} else {
-			logger.Infof("✅ WordList created successfully, materialID: %v", materialID)
-		}
-	}()
-
-	// ✅ `GeneratePhrases` を非同期で処理
-	phrasesChan := make(chan []models.Phrase, 1)
-	wg.Add(1)
-	go func() {
-		logger.Infof("⏳ Generating phrases for materialID: %v", materialID)
-		defer wg.Done()
-		phrases, err := h.PhraseService.GeneratePhrases(ctx, materialID)
-		if err != nil {
-			logger.Warnf("⚠️ No phrases generated: %v, materialID: %v", err, materialID)
-			phrasesChan <- nil // ✅ `nil` を送信し、受信側でチェックできるようにする
 			return
 		}
-		logger.Infof("✅ Phrases generated successfully, materialID: %v, Count: %d", materialID, len(phrases))
-		phrasesChan <- phrases
-	}()
-
-	// ✅ `GenerateWords` を非同期で処理
-	wordsChan := make(chan []models.Word, 1)
-	wg.Add(1)
-	go func() {
-		logger.Infof("⏳ Generating words for materialID: %v", materialID)
-		defer wg.Done()
-		words, err := h.WordService.GenerateWords(ctx, materialID)
-		if err != nil {
-			errChan <- fmt.Errorf("❌ failed to generate words: %w", err)
-			return
-		}
-		logger.Infof("✅ Words generated successfully, materialID: %v, Count: %d", materialID, len(words))
-		wordsChan <- words
+		// ✅ 成功したら HasPendingWordList を false に更新
+		h.MaterialService.UpdateMaterialField(materialULID, "HasPendingWordList", false)
 	}()
 
 	wg.Wait()
 	close(errChan)
-	close(phrasesChan)
-	close(wordsChan)
 
-	// ✅ エラーチェック（エラーがあっても処理は継続）
+	// ✅ エラーチェック
 	hasError := false
 	for err := range errChan {
-		logger.Error(fmt.Errorf("❌ Error occurred: %v, materialID: %v, userID: %v", err, materialID, userID))
+		logger.Errorf("❌ Error occurred: %v, materialID: %v, userID: %v", err, materialID, userID)
+		h.MaterialService.PublishMaterialUpdate(materialULID, fmt.Sprintf(`{"status": "error", "message": "%s"}`, err.Error()))
 		hasError = true
 	}
 
-	// ✅ フレーズの処理
-	phrases := <-phrasesChan
-	if phrases != nil && len(phrases) > 0 {
-		for i := range phrases {
-			phrases[i].PhraseListID = phraseList.ID
-		}
-
-		if err := h.PhraseService.BulkInsertPhrases(phrases); err != nil {
-			logger.Errorf("❌ Failed to store phrases: %v, materialID: %v, userID: %v", err, materialID, userID)
-			hasError = true
-		} else {
-			logger.Infof("✅ Phrases successfully stored, materialID: %v, userID: %v", materialID, userID)
-		}
-	} else {
-		logger.Warnf("⚠️ No phrases were stored, materialID: %v, userID: %v", materialID, userID)
+	// ✅ Material の最終ステータス更新
+	material, err := h.MaterialService.GetMaterialByULID(materialULID, userID)
+	if err != nil {
+		logger.Errorf("❌ Failed to retrieve material: %v", err)
+		h.MaterialService.PublishMaterialUpdate(materialULID, `{"status": "failed"}`)
+		return
 	}
 
-	// ✅ ワードの処理（フレーズがなくてもワードは必ず処理）
-	words := <-wordsChan
-	if len(words) > 0 {
-		for i := range words {
-			words[i].WordListID = wordList.ID
-		}
-
-		if err := h.WordService.BulkInsertWords(words); err != nil {
-			logger.Errorf("❌ Failed to store words: %v, materialID: %v, userID: %v", err, materialID, userID)
-			hasError = true
-		} else {
-			logger.Infof("✅ Words successfully stored, materialID: %v, userID: %v", materialID, userID)
-		}
-	} else {
-		logger.Warnf("⚠️ No words were stored, materialID: %v, userID: %v", materialID, userID)
-	}
-
-	// ✅ 最終ステータス更新
 	if hasError {
 		h.MaterialService.UpdateMaterialStatus(materialID, "failed")
-	} else {
-		logger.Infof("🎉 Processing completed successfully, materialID: %v, userID: %v", materialID, userID)
+		h.MaterialService.PublishMaterialUpdate(materialULID, `{"status": "failed"}`)
+	} else if !(material.HasPendingWordList || material.HasPendingPhraseList) {
 		h.MaterialService.UpdateMaterialStatus(materialID, "completed")
+		h.MaterialService.PublishMaterialUpdate(materialULID, `{"status": "completed"}`)
+	} else {
+		logger.Warnf("⚠️ Material processing incomplete, materialID: %v", materialID)
 	}
+}
+
+func (h *MaterialHandler) StreamMaterialProgressWS(c echo.Context) error {
+    materialULID := c.Param("ulid")
+    tokenString := c.QueryParam("token")
+    if tokenString == "" {
+        return c.JSON(http.StatusUnauthorized, map[string]string{"error": "missing token"})
+    }
+	_, err := isValidJWTToken(tokenString, h.jwtSecret)
+    if err != nil {
+        return c.JSON(http.StatusUnauthorized, map[string]string{"error": err.Error()})
+    }
+
+    websocket.Handler(func(ws *websocket.Conn) {
+        defer ws.Close()
+
+        ch := h.MaterialService.SubscribeToMaterialUpdates(materialULID)
+        defer h.MaterialService.UnsubscribeFromMaterialUpdates(materialULID, ch)
+
+        for msg := range ch {
+            if err := websocket.Message.Send(ws, msg); err != nil {
+                log.Println("WebSocket send error:", err)
+                break
+            }
+        }
+    }).ServeHTTP(c.Response(), c.Request())
+
+    return nil
 }

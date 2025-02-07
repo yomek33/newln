@@ -9,6 +9,7 @@ type Word struct {
 	Importance string `gorm:"type:importance_level;default:'medium'"`
 	Level      string `gorm:"type:word_level;default:'beginner'"`
 	Meaning    string `gorm:"type:varchar(255)"`
+	JPMeaning  string `gorm:"type:varchar(255)"`
 }
 
 type WordList struct {

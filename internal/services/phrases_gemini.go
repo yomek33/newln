@@ -20,11 +20,10 @@ type PhraseResponse struct {
 	Difficulty  string `json:"difficulty"`
 }
 
-
 func (s *phraseService) GeneratePhrases(ctx context.Context, materialID uint) ([]models.Phrase, error) {
 	logger.Infof("🚀 Start GeneratePhrases for materialID: %v", materialID)
 
-	promptFile, err := os.ReadFile("./internal/services/prompts/generate_phrase.txt")
+	promptFile, err := os.ReadFile("./internal/services/prompts/generate_phrases.txt")
 	if err != nil {
 		logger.Error(fmt.Errorf("failed to read prompt file: %w", err))
 		return nil, err
@@ -90,7 +89,7 @@ func (s *phraseService) GeneratePhrases(ctx context.Context, materialID uint) ([
 		wg.Wait()
 		logger.Infof("✅ All phrase meaning generation completed, closing channels")
 		close(resultChan)
-		close(errChan) 
+		close(errChan)
 	}()
 
 	var allPhrases []models.Phrase
@@ -124,7 +123,6 @@ func (s *phraseService) GeneratePhrases(ctx context.Context, materialID uint) ([
 	return allPhrases, nil
 }
 
-
 func chunkAndDeduplicatePhrases(phrases []PhraseResponse, chunkSize int) [][]PhraseResponse {
 	var chunks [][]PhraseResponse
 	seen := make(map[string]bool)
@@ -132,7 +130,7 @@ func chunkAndDeduplicatePhrases(phrases []PhraseResponse, chunkSize int) [][]Phr
 
 	for _, phrase := range phrases {
 		if _, exists := seen[phrase.Collocation]; exists {
-			continue 
+			continue
 		}
 		seen[phrase.Collocation] = true
 
@@ -140,7 +138,7 @@ func chunkAndDeduplicatePhrases(phrases []PhraseResponse, chunkSize int) [][]Phr
 
 		if len(currentChunk) == chunkSize {
 			chunks = append(chunks, currentChunk)
-			currentChunk = nil 
+			currentChunk = nil
 		}
 	}
 
@@ -162,7 +160,7 @@ type PhraseWithMeaning struct {
 
 // 意味を生成する関数
 func (s *phraseService) GenerateMeaning(ctx context.Context, phrasesStr string) ([]models.Phrase, error) {
-	promptFile, err := os.ReadFile("./internal/services/prompts/generate_meaning_phrase.txt") 
+	promptFile, err := os.ReadFile("./internal/services/prompts/generate_meanings_phrases.txt")
 	if err != nil {
 		return nil, fmt.Errorf("failed to read prompt file: %w", err)
 	}
@@ -184,13 +182,13 @@ func (s *phraseService) GenerateMeaning(ctx context.Context, phrasesStr string) 
 	var phrases []models.Phrase
 	for _, res := range meaningResponses {
 		phrases = append(phrases, models.Phrase{
-			Text:        res.Collocation,
-			Meaning:     res.Meaning,
-			JPMeaning:   res.JPMeaning,
-			Example:     res.Example,
-			FromText:    res.FromText,
-			Difficulty:  res.Difficulty,
-			Importance:  determineImportance(res.Difficulty),
+			Text:       res.Collocation,
+			Meaning:    res.Meaning,
+			JPMeaning:  res.JPMeaning,
+			Example:    res.Example,
+			FromText:   res.FromText,
+			Difficulty: res.Difficulty,
+			Importance: determineImportance(res.Difficulty),
 		})
 	}
 

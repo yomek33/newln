@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/yomek33/newln/internal/services"
-	"github.com/yomek33/newln/internal/sse"
 
 	"github.com/yomek33/newln/internal/logger"
 
@@ -17,14 +16,13 @@ import (
 type Handlers struct {
 	UserHandler     *UserHandler
 	MaterialHandler *MaterialHandler
-	NewSSEManager   *sse.SSEManager
 	jwtSecret       []byte
 }
 
 func NewHandler(services *services.Services, jwtSecret []byte) *Handlers {
 	return &Handlers{
 		UserHandler:     NewUserHandler(services.UserService),
-		MaterialHandler: NewMaterialHandler(services.MaterialService, services.PhraseService, services.WordService),
+		MaterialHandler: NewMaterialHandler(services.MaterialService, services.PhraseService, services.WordService,jwtSecret),
 		jwtSecret:       jwtSecret,
 	}
 }
@@ -49,6 +47,9 @@ func (h *Handlers) SetAPIRoutes(e *echo.Echo) {
 	materialRoutes.GET("/:ulid/status", h.MaterialHandler.CheckMaterialStatus)
 	// materialRoutes.GET("/:id/phrases", h.MaterialHandler.GetProcessedPhrases)
 	// materialRoutes.GET("/:id/chats", h.MaterialHandler.GetChatByMaterialID)
+
+	wsRoutes := e.Group("/api/materials")
+	wsRoutes.GET("/:ulid/progress", h.MaterialHandler.StreamMaterialProgressWS) 
 }
 
 func Echo() *echo.Echo {

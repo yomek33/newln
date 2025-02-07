@@ -24,7 +24,7 @@ func NewMockGeminiClient(responseData ...json.RawMessage) *MockGeminiClient {
 	}
 }
 
-func (m *MockGeminiClient)GenerateJsonContent(ctx context.Context, prompt string, jsonSchema *genai.Schema) (json.RawMessage, error) {
+func (m *MockGeminiClient) GenerateJsonContent(ctx context.Context, prompt string, jsonSchema *genai.Schema) (json.RawMessage, error) {
 	fmt.Println("⚡ Using MOCK Gemini Service")
 
 	// 設定されたモックレスポンスを返す

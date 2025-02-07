@@ -8,7 +8,7 @@ You are an educational content creator for advanced English learners. You are pr
 
 "example": An example sentence that uses the collocation in context.
 
-"difficulty": The difficulty level ("easy", "intermediate", or "advance").
+"difficulty": The difficulty level ("easy", "intermediate", or "advanced").
 
 Your task is to generate an updated JSON object that includes two additional fields:
 
@@ -24,13 +24,13 @@ For example, given the input:
 "collocation": "close a deal",
 "from_text": true,
 "example": "The team worked tirelessly to close a deal with the new partner.",
-"difficulty": "advance"
+"difficulty": "advanced"
 },{
 "id": 11,
 "collocation": "machine learning",
 "from_text": true,
 "example": "The infrastructure supports advanced experiments, including AI and machine learning in space.",
-"difficulty": "advance"
+"difficulty": "advanced"
 },
 {
 "id": 2,
@@ -47,7 +47,7 @@ Your output should be:
 "collocation": "close a deal",
 "from_text": true,
 "example": "The team worked tirelessly to close a deal with the new partner.",
-"difficulty": "advance",
+"difficulty": "advanced",
 "meaning":"to make a successful business arrangement with someone"
 "jp-meaning":"契約を結ぶ、取引きする”
 },
@@ -56,7 +56,7 @@ Your output should be:
 "collocation": "machine learning",
 "from_text": true,
 "example": "The infrastructure supports advanced experiments, including AI and machine learning in space.",
-"difficulty": "advance",
+"difficulty": "advanced",
 "meaning": "the process of computers improving their own ability to carry out tasks by analysing new data, without a human needing to give instructions in the form of a program, or the study of creating and using computer systems that can do this",
 "jp-meaning": "機械学習"
 },
