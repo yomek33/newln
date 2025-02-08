@@ -95,3 +95,11 @@ func (m *MockMaterialStore) CheckAllCompleted(materialID uint) (bool, error) {
 func (m *MockMaterialStore) UpdateMaterialField(ulid string, field string, value interface{})error {
 	return nil
 }
+
+func (m *MockMaterialStore) UpdateHasPendingWordStatus(ulid string, status bool) error {
+	return nil
+}
+
+func (m *MockMaterialStore) UpdateHasPendingPhraseStatus(ulid string, status bool) error {
+	return nil
+}

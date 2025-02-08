@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/yomek33/newln/internal/logger"
 	"github.com/yomek33/newln/internal/models"
 	"github.com/yomek33/newln/internal/stores"
 
@@ -23,6 +24,8 @@ type MaterialService interface {
 	UnsubscribeFromMaterialUpdates(materialULID string, ch chan string)
 	PublishMaterialUpdate(materialULID string, message string)
 	UpdateMaterialField(ulid string, field string, value interface{}) error
+	UpdateHasPendingWordStatus(ulid string, status bool) error
+	UpdateHasPendingPhraseStatus(ulid string, status bool) error
 }
 
 type materialService struct {
@@ -129,24 +132,52 @@ func (s *materialService) UnsubscribeFromMaterialUpdates(materialULID string, ch
 	close(ch)
 }
 func (s *materialService) PublishMaterialUpdate(materialULID string, message string) {
+	logger.Infof("📡 Sending WebSocket update for %s: %s", materialULID, message)
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	subscribers, ok := s.subscribers[materialULID]
 	if !ok {
-		return // 登録されていなければ何もしない
+		logger.Warnf("⚠️ No WebSocket subscribers for materialULID: %s", materialULID)
+		return
 	}
 
 	for _, ch := range subscribers {
 		select {
 		case ch <- message:
+			logger.Infof("✅ Sent WebSocket update: %s", message)
 		default:
-			//  送信できない場合はスキップ（クライアントが切断済み）
+			logger.Warnf("⚠️ WebSocket channel full, skipping: %s", materialULID)
 		}
 	}
 }
 
 
 func (s *materialService) UpdateMaterialField(ulid string, field string, value interface{}) error {
-	return s.store.UpdateMaterialField(ulid, field, value)
+	logger.Infof("🛠 Updating field %s to %v for material %s", field, value, ulid)
+	err := s.store.UpdateMaterialField(ulid, field, value)
+	if err != nil {
+		logger.Errorf("❌ Failed to update %s for material %s: %v", field, ulid, err)
+	}
+	return err
+}
+
+
+func (s *materialService) UpdateHasPendingWordStatus(ulid string, status bool) error {
+	logger.Infof("🛠 Updating hasPendingWordStatus to %v for material %s", status, ulid)
+	err := s.store.UpdateHasPendingWordStatus(ulid, status)
+	if err != nil {
+		logger.Errorf("❌ Failed to update hasPendingWordStatus for material %s: %v", ulid, err)
+	}
+	return err
+}
+
+func (s *materialService) UpdateHasPendingPhraseStatus(ulid string, status bool) error {
+	logger.Infof("🛠 Updating hasPendingPhraseStatus to %v for material %s", status, ulid)
+	err := s.store.UpdateHasPendingPhraseStatus(ulid, status)
+	if err != nil {
+		logger.Errorf("❌ Failed to update hasPendingPhraseStatus for material %s: %v", ulid, err)
+	}
+	return err
 }

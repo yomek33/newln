@@ -27,6 +27,8 @@ type MaterialStore interface {
 	GetMaterialStatus(ulid string) (string, error)
 	CheckAllCompleted(materialID uint) (bool, error)
 	UpdateMaterialField(ulid string, field string, value interface{}) error
+	UpdateHasPendingWordStatus(ulid string, status bool) error
+	UpdateHasPendingPhraseStatus(ulid string, status bool) error
 }
 
 type materialStore struct {
@@ -140,4 +142,12 @@ func (s *materialStore) CheckAllCompleted(materialID uint) (bool, error) {
 
 func (s *materialStore) UpdateMaterialField(ulid string, field string, value interface{}) error {
 	return s.DB.Model(&models.Material{}).Where("ul_id = ?", ulid).Update(field, value).Error
+}
+
+func (s *materialStore) UpdateHasPendingWordStatus(ulid string, status bool) error {
+	return s.DB.Model(&models.Material{}).Where("ul_id = ?", ulid).Update("has_pending_word_list", status).Error
+}
+
+func (s *materialStore) UpdateHasPendingPhraseStatus(ulid string, status bool) error {
+	return s.DB.Model(&models.Material{}).Where("ul_id = ?", ulid).Update("has_pending_phrase_list", status).Error
 }
