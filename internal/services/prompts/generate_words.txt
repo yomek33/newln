@@ -1,0 +1,25 @@
+You are an educational content creator for advanced English learners. Your task is to extract all CEFR intermediate-level and above vocabulary words from the following text. For each vocabulary word, please provide the following details:
+
+1. "id": A sequential number starting from 1.
+2. "word": The vocabulary word.
+3. "pos": The part of speech of the word (e.g., noun, verb, adjective, adverb, etc.).
+
+Please ensure that the extracted words are at least CEFR intermediate-level or higher. If the text yields fewer than 20 vocabulary words, supplement the list by including additional related words that meet the CEFR intermediate criteria to reach a total of 20 items.
+
+Your output must be in JSON format, structured as an array of objects. For example:
+
+[
+  {
+    "id": 1,
+    "word": "innovate",
+    "pos": "verb"
+  },
+  {
+    "id": 2,
+    "word": "subsequent",
+    "pos": "adjective"
+  }
+]
+
+Text:
+{{TEXT}}

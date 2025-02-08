@@ -116,3 +116,36 @@ func parseUintParam(c echo.Context, paramName string) (uint, error) {
 	}
 	return uint(value), err
 }
+func isValidJWTToken(tokenString string, secretKey []byte) (string, error) {
+	if tokenString == "" {
+		return "", errors.New("missing token")
+	}
+
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("unexpected signing method")
+		}
+		return secretKey, nil
+	})
+
+	if err != nil {
+		logger.Errorf("JWT parse error: %v", err)
+		return "", errors.New("invalid token")
+	}
+
+	if !token.Valid {
+		return "", errors.New("invalid token")
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return "", errors.New("invalid claims structure")
+	}
+
+	userID, ok := claims["sub"].(string)
+	if !ok || userID == "" {
+		return "", errors.New("missing or invalid 'sub' claim")
+	}
+
+	return userID, nil
+}

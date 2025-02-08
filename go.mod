@@ -12,6 +12,7 @@ require (
 	github.com/oklog/ulid/v2 v2.1.0
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/crypto v0.32.0
+	golang.org/x/net v0.34.0
 	google.golang.org/genai v0.2.0
 	gorm.io/driver/postgres v1.5.11
 	gorm.io/gorm v1.25.12
@@ -39,7 +40,6 @@ require (
 	github.com/rogpeppe/go-internal v1.13.1 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
-	golang.org/x/net v0.34.0 // indirect
 	golang.org/x/oauth2 v0.25.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
 	golang.org/x/sys v0.29.0 // indirect

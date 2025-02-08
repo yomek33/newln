@@ -81,7 +81,6 @@ func isRetryableError(err error) bool {
 	return (errStr == "429 Too Many Requests" || errStr == "500 Internal Server Error" || errStr == "504 Gateway Timeout")
 }
 
-
 func (c *RealGeminiClient) GenerateJsonContent(ctx context.Context, prompt string, jsonSchema *genai.Schema) (json.RawMessage, error) {
 	model := "gemini-1.5-flash"
 	config := genai.GenerateContentConfig{
@@ -90,11 +89,11 @@ func (c *RealGeminiClient) GenerateJsonContent(ctx context.Context, prompt strin
 		TopP:             genai.Ptr(0.95),
 		Temperature:      genai.Ptr(float64(1)),
 		ResponseMIMEType: "application/json",
-		ResponseSchema: 	   jsonSchema,
+		ResponseSchema:   jsonSchema,
 	}
 
 	// セマフォを使って並列リクエストを制限
-	semaphore <- struct{}{} // スロット確保
+	semaphore <- struct{}{}        // スロット確保
 	defer func() { <-semaphore }() // スロット解放
 
 	return retryWithBackoff(ctx, 3, func() (json.RawMessage, error) {

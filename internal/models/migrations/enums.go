@@ -12,12 +12,12 @@ func CreateEnumTypes(db *gorm.DB) error {
 	}{
 		{"material_status", []string{"draft", "published", "archived"}},
 		{"importance_level", []string{"low", "medium", "high"}},
-		{"word_level", []string{"beginner", "intermediate", "advanced"}},
+		{"word_level", []string{"easy", "intermediate", "advanced"}},
 		{"progress_status", []string{"not_started", "in_progress", "completed"}},
 		{"sender_type", []string{"user", "system", "bot"}},
 		{"word_list_status", []string{"pending", "processing", "completed", "failed"}},
 		{"phrase_list_status", []string{"pending", "processing", "completed", "failed"}},
-		{"difficulty_level", []string{"easy", "intermediate", "advance"}},
+		{"difficulty_level", []string{"easy", "intermediate", "advanced"}},
 	}
 
 	for _, enum := range enumDefinitions {

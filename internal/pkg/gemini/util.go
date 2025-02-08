@@ -22,7 +22,7 @@ func GenerateSchema[T any]() *genai.Schema {
 	return generateSchema(reflect.TypeOf(t))
 }
 
-//  型 (`reflect.Type`) を直接渡す
+// 型 (`reflect.Type`) を直接渡す
 func generateSchema(t reflect.Type) *genai.Schema {
 	// ポインタの場合はデリファレンス
 	if t.Kind() == reflect.Ptr {
@@ -78,7 +78,6 @@ func getRequiredFields(t reflect.Type) []string {
 	}
 	return required
 }
-
 
 // goTypeToGenaiType: Go の型を genai の型に変換
 func goTypeToGenaiType(t reflect.Type) genai.Type {
