@@ -92,7 +92,7 @@ func (m *MockMaterialStore) CheckAllCompleted(materialID uint) (bool, error) {
 	return false, errors.New("material not found")
 }
 
-func (m *MockMaterialStore) UpdateMaterialField(ulid string, field string, value interface{})error {
+func (m *MockMaterialStore) UpdateMaterialField(ulid string, field string, value interface{}) error {
 	return nil
 }
 

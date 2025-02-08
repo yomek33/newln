@@ -2,31 +2,25 @@ package services
 
 import (
 	"context"
-	"os"
 	"testing"
 
 	"github.com/joho/godotenv"
 	"github.com/yomek33/newln/internal/models"
-	"github.com/yomek33/newln/internal/pkg/gemini"
+	"github.com/yomek33/newln/internal/pkg/vertex"
 	stores_mock "github.com/yomek33/newln/internal/stores/mocks"
 	"gorm.io/gorm"
 )
 
-func TestPhraseService_GeneratePhrases_RealGemini(t *testing.T) {
+func TestPhraseService_GeneratePhrases_RealVertex(t *testing.T) {
 	if err := godotenv.Load("./../../.env"); err != nil {
 		t.Fatalf("error loading .env file: %v", err)
 	}
 
-	apiKey := os.Getenv("GEMINI_API_KEY")
-	if apiKey == "" {
-		t.Fatal("GEMINI_API_KEY is not set")
-	}
-
 	ctx := context.Background()
 
-	geminiClient, err := gemini.NewRealGeminiClient(ctx, apiKey)
+	vertexClient, err := vertex.NewRealVertexClient()
 	if err != nil {
-		t.Fatalf("failed to create Gemini client: %v", err)
+		t.Fatalf("failed to create Vertex client: %v", err)
 	}
 
 	materialStore := stores_mock.NewMockMaterialStore()
@@ -37,7 +31,7 @@ func TestPhraseService_GeneratePhrases_RealGemini(t *testing.T) {
 
 	service := &phraseService{
 		materialStore: materialStore,
-		geminiClient:  geminiClient,
+		vertexClient:  vertexClient,
 	}
 
 	materialID := uint(1)
@@ -56,10 +50,10 @@ func TestPhraseService_GeneratePhrases_RealGemini(t *testing.T) {
 	t.Logf("Success! Generated phrases: %+v", phrases)
 }
 
-func TestPhraseService_GeneratePhrases_MockGemini(t *testing.T) {
+func TestPhraseService_GeneratePhrases_MockVertex(t *testing.T) {
 	ctx := context.Background()
 
-	geminiClient := gemini.NewMockGeminiClient()
+	vertexClient := vertex.NewMockVertexClient()
 	materialStore := stores_mock.NewMockMaterialStore()
 	materialStore.Materials[1] = &models.Material{
 		Model:   gorm.Model{ID: 1},
@@ -68,7 +62,7 @@ func TestPhraseService_GeneratePhrases_MockGemini(t *testing.T) {
 
 	service := &phraseService{
 		materialStore: materialStore,
-		geminiClient:  geminiClient,
+		vertexClient:  vertexClient,
 	}
 
 	materialID := uint(1)

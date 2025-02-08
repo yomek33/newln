@@ -1,11 +1,11 @@
-package gemini
+package vertex
 
 import (
 	"encoding/json"
 	"fmt"
 	"reflect"
 
-	"google.golang.org/genai"
+	"cloud.google.com/go/vertexai/genai"
 )
 
 // ジェネリックな JSON デコード関数

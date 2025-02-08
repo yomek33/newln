@@ -1,6 +1,6 @@
-package gemini
+package vertex
 
-// func TestRealGeminiClient_GenerateJsonContent(t *testing.T) {
+// func TestRealVertexClient_GenerateJsonContent(t *testing.T) {
 // 	if err := godotenv.Load("./../../../.env"); err != nil {
 // 		t.Fatalf("error loading .env file: %v", err)
 // 	}
@@ -11,9 +11,9 @@ package gemini
 // 	}
 
 // 	ctx := context.Background()
-// 	client, err := NewRealGeminiClient(ctx, apiKey)
+// 	client, err := NewRealVertexClient(ctx, apiKey)
 // 	if err != nil {
-// 		t.Fatalf("failed to create Gemini client: %v", err)
+// 		t.Fatalf("failed to create Vertex client: %v", err)
 // 	}
 
 // 	prompt := "Generate a JSON array of 3 programming tips"

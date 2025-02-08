@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/yomek33/newln/internal/models"
-	"github.com/yomek33/newln/internal/pkg/gemini"
+	"github.com/yomek33/newln/internal/pkg/vertex"
 	"github.com/yomek33/newln/internal/stores"
 )
 
@@ -21,11 +21,11 @@ type WordService interface {
 type wordService struct {
 	store         stores.WordStore
 	materialStore stores.MaterialStore
-	geminiClient  gemini.GeminiService
+	vertexClient  vertex.VertexService
 }
 
-func NewWordService(s stores.WordStore, materialStore stores.MaterialStore, geminiClient gemini.GeminiService) WordService {
-	return &wordService{store: s, materialStore: materialStore, geminiClient: geminiClient}
+func NewWordService(s stores.WordStore, materialStore stores.MaterialStore, vertexClient vertex.VertexService) WordService {
+	return &wordService{store: s, materialStore: materialStore, vertexClient: vertexClient}
 }
 
 func (s *wordService) CreateWordList(wordList *models.WordList) error {

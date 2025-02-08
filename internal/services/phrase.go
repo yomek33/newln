@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/yomek33/newln/internal/models"
-	"github.com/yomek33/newln/internal/pkg/gemini"
+	"github.com/yomek33/newln/internal/pkg/vertex"
 	"github.com/yomek33/newln/internal/stores"
 )
 
@@ -22,11 +22,11 @@ type PhraseService interface {
 type phraseService struct {
 	store         stores.PhraseStore
 	materialStore stores.MaterialStore
-	geminiClient  gemini.GeminiService
+	vertexClient  vertex.VertexService
 }
 
-func NewPhraseService(s stores.PhraseStore, materialStore stores.MaterialStore, gemini gemini.GeminiService) PhraseService {
-	return &phraseService{store: s, materialStore: materialStore, geminiClient: gemini}
+func NewPhraseService(s stores.PhraseStore, materialStore stores.MaterialStore, vertex vertex.VertexService) PhraseService {
+	return &phraseService{store: s, materialStore: materialStore, vertexClient: vertex}
 }
 
 func (s *phraseService) CreatePhraseList(phraseList *models.PhraseList) error {
@@ -64,16 +64,16 @@ func GeneratePhrases(topic string) ([]string, error) {
 // 		return nil, fmt.Errorf("material is nil")
 // 	}
 
-// 	// Check if GeminiClient is nil
-// 	// if s.GeminiClient == nil {
-// 	// 	log.Printf("GeminiClient is nil")
-// 	// 	return nil, fmt.Errorf("GeminiClient is nil")
+// 	// Check if VertexClient is nil
+// 	// if s.VertexClient == nil {
+// 	// 	log.Printf("VertexClient is nil")
+// 	// 	return nil, fmt.Errorf("VertexClient is nil")
 // 	// }
 
 // 	// log.Printf("Generating phrases for material %d", materialID)
 
-// 	// // Generate phrases using GeminiClientx
-// 	// phraseTexts, err := s.GeminiClient.GeneratePhrases(ctx, material.Content)
+// 	// // Generate phrases using VertexClientx
+// 	// phraseTexts, err := s.VertexClient.GeneratePhrases(ctx, material.Content)
 // 	// if err != nil {
 // 	// 	log.Printf("Failed to generate phrases: %v", err)
 // 	// 	return nil, fmt.Errorf("failed to generate phrases: %w", err)

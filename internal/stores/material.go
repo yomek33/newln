@@ -139,7 +139,6 @@ func (s *materialStore) CheckAllCompleted(materialID uint) (bool, error) {
 	return true, nil
 }
 
-
 func (s *materialStore) UpdateMaterialField(ulid string, field string, value interface{}) error {
 	return s.DB.Model(&models.Material{}).Where("ul_id = ?", ulid).Update(field, value).Error
 }

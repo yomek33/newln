@@ -31,20 +31,20 @@ func NewMaterialHandler(materialService services.MaterialService, phraseService 
 		MaterialService: materialService,
 		PhraseService:   phraseService,
 		WordService:     wordService,
-		jwtSecret: jwtSecret,
+		jwtSecret:       jwtSecret,
 	}
 }
 
 type MaterialResponse struct {
-	ID        uint
-	ULID      string
-	Content   string
-	Title     string
-	Status    string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID                   uint
+	ULID                 string
+	Content              string
+	Title                string
+	Status               string
+	CreatedAt            time.Time
+	UpdatedAt            time.Time
 	HasPendingPhraseList bool
-	HasPendingWordList	bool
+	HasPendingWordList   bool
 }
 
 func (h *MaterialHandler) CreateMaterial(c echo.Context) error {
@@ -64,23 +64,25 @@ func (h *MaterialHandler) CreateMaterial(c echo.Context) error {
 	material.HasPendingPhraseList = true
 	material.HasPendingWordList = true
 
-	ctx, cancel := context.WithTimeout(c.Request().Context(), 10*time.Second)
-	defer cancel()
-
 	createdMaterial, err := h.MaterialService.CreateMaterial(&material)
 	if err != nil {
 		logger.Errorf("Error creating material: %v, UserID: %v", err, UserID)
 		return respondWithError(c, http.StatusInternalServerError, ErrFailedCreateMaterial)
 	}
-	go h.processMaterialAsync(ctx, createdMaterial.ID, createdMaterial.ULID, UserID)
+	go func() {
+		asyncCtx, cancel := context.WithTimeout(context.Background(), 300*time.Second) // 5分の独立した `ctx`
+		defer cancel()
+
+		h.processMaterialAsync(asyncCtx, createdMaterial.ID, createdMaterial.ULID, UserID)
+	}()
 	logger.Infof("createdMaterial: %+v", createdMaterial)
 	response := MaterialResponse{
-		ULID:      material.ULID,
-		Content:   material.Content,
-		Title:     material.Title,
-		Status:    createdMaterial.Status,
-		CreatedAt: createdMaterial.CreatedAt,
-		UpdatedAt: createdMaterial.UpdatedAt,
+		ULID:                 material.ULID,
+		Content:              material.Content,
+		Title:                material.Title,
+		Status:               createdMaterial.Status,
+		CreatedAt:            createdMaterial.CreatedAt,
+		UpdatedAt:            createdMaterial.UpdatedAt,
 		HasPendingPhraseList: true,
 		HasPendingWordList:   true,
 	}
@@ -235,7 +237,7 @@ func (h *MaterialHandler) processMaterialAsync(ctx context.Context, materialID u
 			return
 		}
 		phrasesChan <- phrases
-				if err := h.MaterialService.UpdateHasPendingPhraseStatus(materialULID, false); err != nil {
+		if err := h.MaterialService.UpdateHasPendingPhraseStatus(materialULID, false); err != nil {
 			logger.Errorf("❌ Failed to update HasPhraseList: %v", err)
 			errChan <- fmt.Errorf("❌ failed to update HasPhraseList: %w", err)
 		}
@@ -320,29 +322,29 @@ func (h *MaterialHandler) processMaterialAsync(ctx context.Context, materialID u
 	}
 }
 func (h *MaterialHandler) StreamMaterialProgressWS(c echo.Context) error {
-    materialULID := c.Param("ulid")
-    tokenString := c.QueryParam("token")
-    if tokenString == "" {
-        return c.JSON(http.StatusUnauthorized, map[string]string{"error": "missing token"})
-    }
+	materialULID := c.Param("ulid")
+	tokenString := c.QueryParam("token")
+	if tokenString == "" {
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "missing token"})
+	}
 	_, err := isValidJWTToken(tokenString, h.jwtSecret)
-    if err != nil {
-        return c.JSON(http.StatusUnauthorized, map[string]string{"error": err.Error()})
-    }
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": err.Error()})
+	}
 
-    websocket.Handler(func(ws *websocket.Conn) {
-        defer ws.Close()
+	websocket.Handler(func(ws *websocket.Conn) {
+		defer ws.Close()
 
-        ch := h.MaterialService.SubscribeToMaterialUpdates(materialULID)
-        defer h.MaterialService.UnsubscribeFromMaterialUpdates(materialULID, ch)
+		ch := h.MaterialService.SubscribeToMaterialUpdates(materialULID)
+		defer h.MaterialService.UnsubscribeFromMaterialUpdates(materialULID, ch)
 
-        for msg := range ch {
-            if err := websocket.Message.Send(ws, msg); err != nil {
-                log.Println("WebSocket send error:", err)
-                break
-            }
-        }
-    }).ServeHTTP(c.Response(), c.Request())
+		for msg := range ch {
+			if err := websocket.Message.Send(ws, msg); err != nil {
+				log.Println("WebSocket send error:", err)
+				break
+			}
+		}
+	}).ServeHTTP(c.Response(), c.Request())
 
-    return nil
+	return nil
 }

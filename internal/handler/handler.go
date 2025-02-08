@@ -22,7 +22,7 @@ type Handlers struct {
 func NewHandler(services *services.Services, jwtSecret []byte) *Handlers {
 	return &Handlers{
 		UserHandler:     NewUserHandler(services.UserService),
-		MaterialHandler: NewMaterialHandler(services.MaterialService, services.PhraseService, services.WordService,jwtSecret),
+		MaterialHandler: NewMaterialHandler(services.MaterialService, services.PhraseService, services.WordService, jwtSecret),
 		jwtSecret:       jwtSecret,
 	}
 }
@@ -49,7 +49,7 @@ func (h *Handlers) SetAPIRoutes(e *echo.Echo) {
 	// materialRoutes.GET("/:id/chats", h.MaterialHandler.GetChatByMaterialID)
 
 	wsRoutes := e.Group("/api/materials")
-	wsRoutes.GET("/:ulid/progress", h.MaterialHandler.StreamMaterialProgressWS) 
+	wsRoutes.GET("/:ulid/progress", h.MaterialHandler.StreamMaterialProgressWS)
 }
 
 func Echo() *echo.Echo {
