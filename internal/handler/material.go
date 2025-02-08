@@ -188,7 +188,7 @@ func (h *MaterialHandler) processMaterialAsync(ctx context.Context, materialID u
 	h.MaterialService.UpdateMaterialStatus(materialID, "processing")
 
 	// ✅ ステータス変更を SSE で送信
-	h.MaterialService.PublishMaterialUpdate(materialULID, `{"status": "processing"}`)
+	h.MaterialService.PublishMaterialUpdate(materialULID, `{"event": "processing"}`)
 
 	// ✅ PhraseList を作成
 	phraseList := models.PhraseList{
@@ -268,7 +268,7 @@ func (h *MaterialHandler) processMaterialAsync(ctx context.Context, materialID u
 	hasError := false
 	for err := range errChan {
 		logger.Errorf("❌ Error occurred: %v, materialID: %v, userID: %v", err, materialID, userID)
-		h.MaterialService.PublishMaterialUpdate(materialULID, fmt.Sprintf(`{"status": "error", "message": "%s"}`, err.Error()))
+		h.MaterialService.PublishMaterialUpdate(materialULID, fmt.Sprintf(`{"event": "error", "message": "%s"}`, err.Error()))
 		hasError = true
 	}
 
@@ -281,11 +281,11 @@ func (h *MaterialHandler) processMaterialAsync(ctx context.Context, materialID u
 		if err := h.PhraseService.BulkInsertPhrases(phrases); err != nil {
 			hasError = true
 			logger.Errorf("❌ Failed to store phrases: %v", err)
-			h.MaterialService.PublishMaterialUpdate(materialULID, fmt.Sprintf(`{"status": "error", "message": "%s"}`, err.Error()))
+			h.MaterialService.PublishMaterialUpdate(materialULID, fmt.Sprintf(`{"event": "error", "message": "%s"}`, err.Error()))
 		} else {
 			// ✅ phrases を SSE で送信
 			phrasesJSON, _ := json.Marshal(phrases)
-			h.MaterialService.PublishMaterialUpdate(materialULID, fmt.Sprintf(`{"status": "phrases_stored", "data": %s}`, phrasesJSON))
+			h.MaterialService.PublishMaterialUpdate(materialULID, fmt.Sprintf(`{"event": "phrases_stored", "data": %s}`, phrasesJSON))
 		}
 	} else {
 		logger.Warnf("⚠️ No phrases were stored, materialULID: %v", materialULID)
@@ -300,11 +300,11 @@ func (h *MaterialHandler) processMaterialAsync(ctx context.Context, materialID u
 		if err := h.WordService.BulkInsertWords(words); err != nil {
 			hasError = true
 			logger.Errorf("❌ Failed to store words: %v", err)
-			h.MaterialService.PublishMaterialUpdate(materialULID, fmt.Sprintf(`{"status": "error", "message": "%s"}`, err.Error()))
+			h.MaterialService.PublishMaterialUpdate(materialULID, fmt.Sprintf(`{"event": "error", "message": "%s"}`, err.Error()))
 		} else {
 			// ✅ words を SSE で送信
 			wordsJSON, _ := json.Marshal(words)
-			h.MaterialService.PublishMaterialUpdate(materialULID, fmt.Sprintf(`{"status": "words_stored", "data": %s}`, wordsJSON))
+			h.MaterialService.PublishMaterialUpdate(materialULID, fmt.Sprintf(`{"event": "words_stored", "data": %s}`, wordsJSON))
 		}
 	} else {
 		logger.Warnf("⚠️ No words were stored, materialULID: %v", materialULID)
@@ -313,10 +313,10 @@ func (h *MaterialHandler) processMaterialAsync(ctx context.Context, materialID u
 	// ✅ 最終ステータス更新 & SSE 送信
 	if hasError {
 		h.MaterialService.UpdateMaterialStatus(materialID, "failed")
-		h.MaterialService.PublishMaterialUpdate(materialULID, `{"status": "failed"}`)
+		h.MaterialService.PublishMaterialUpdate(materialULID, `{"event": "failed"}`)
 	} else {
 		h.MaterialService.UpdateMaterialStatus(materialID, "completed")
-		h.MaterialService.PublishMaterialUpdate(materialULID, `{"status": "completed"}`)
+		h.MaterialService.PublishMaterialUpdate(materialULID, `{"event": "completed"}`)
 	}
 }
 func (h *MaterialHandler) StreamMaterialProgressWS(c echo.Context) error {
