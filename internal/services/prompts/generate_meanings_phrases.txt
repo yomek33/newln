@@ -1,40 +1,40 @@
-You are an educational content creator for advanced English learners. You are provided with a JSON object that represents a collocation with the following fields:
+You are an educational content creator for advanced English learners. You are provided with a JSON object that represents a phrase with the following fields:
 
 "id": A unique identifier.
 
-"collocation": The collocation word or phrase.
+"phrase": The phrase word or phrase.
 
-"from_text": A boolean indicating whether the collocation was directly extracted from the text.
+"from_text": A boolean indicating whether the phrase was directly extracted from the text.
 
-"example": An example sentence that uses the collocation in context.
+"example": An example sentence that uses the phrase in context.
 
 "difficulty": The difficulty level ("easy", "intermediate", or "advanced").
 
 Your task is to generate an updated JSON object that includes two additional fields:
 
-"meaning": A concise explanation in English of the collocation's meaning or usage.
+"meaning": A concise explanation in English of the phrase's meaning or usage.
 
-"jp-meaning": The exact Japanese translation of the collocation itself (for example, for "machine learning", output "機械学習").
+"jp-meaning": The exact Japanese translation of the phrase itself (for example, for "machine learning", output "機械学習").
 
-The "jp-meaning" should not be a translation of the English explanation but rather the direct Japanese equivalent of the collocation.
+The "jp-meaning" should not be a translation of the English explanation but rather the direct Japanese equivalent of the phrase.
 
 For example, given the input:
 [{
 "id": 1,
-"collocation": "close a deal",
+"phrase": "close a deal",
 "from_text": true,
 "example": "The team worked tirelessly to close a deal with the new partner.",
 "difficulty": "advanced"
 },{
 "id": 11,
-"collocation": "machine learning",
+"phrase": "machine learning",
 "from_text": true,
 "example": "The infrastructure supports advanced experiments, including AI and machine learning in space.",
 "difficulty": "advanced"
 },
 {
 "id": 2,
-"collocation": "in operation",
+"phrase": "in operation",
 "from_text": true,
 "example": "The generative AI large language model has been in operation since mid-July.",
 "difficulty": "easy"
@@ -44,7 +44,7 @@ For example, given the input:
 Your output should be:
 [{
 "id": 1,
-"collocation": "close a deal",
+"phrase": "close a deal",
 "from_text": true,
 "example": "The team worked tirelessly to close a deal with the new partner.",
 "difficulty": "advanced",
@@ -53,7 +53,7 @@ Your output should be:
 },
 {
 "id": 11,
-"collocation": "machine learning",
+"phrase": "machine learning",
 "from_text": true,
 "example": "The infrastructure supports advanced experiments, including AI and machine learning in space.",
 "difficulty": "advanced",
@@ -62,7 +62,7 @@ Your output should be:
 },
 {
 "id": 2,
-"collocation": "in operation",
+"phrase": "in operation",
 "from_text": true,
 "example": "The generative AI large language model has been in operation since mid-July.",
 "difficulty": "easy",
@@ -73,35 +73,35 @@ Your output should be:
 
 Please generate the updated JSON object accordingly.
 {
-"collocation": "deployed a model",
+"phrase": "deployed a model",
 "difficulty": "intermediate",
 "example": "Booz Allen Hamilton deployed a generative AI large language model on the International Space Station.",
 "from_text": true,
 "id": 1
 },
 {
-"collocation": "large language model",
+"phrase": "large language model",
 "difficulty": "intermediate",
 "example": "The generative AI large language model has been in operation since mid-July.",
 "from_text": true,
 "id": 2
 },
 {
-"collocation": "in operation",
+"phrase": "in operation",
 "difficulty": "intermediate",
 "example": "The generative AI large language model has been in operation since mid-July.",
 "from_text": true,
 "id": 3
 },
 {
-"collocation": "resolve issues",
+"phrase": "resolve issues",
 "difficulty": "intermediate",
 "example": "The LLM at the space station is intended to help astronauts address queries and resolve issues.",
 "from_text": true,
 "id": 4
 },
 {
-"collocation": "conduct repairs",
+"phrase": "conduct repairs",
 "difficulty": "intermediate",
 "example": "Right now, astronauts train for many hours to be able to conduct repairs of machinery and onboard systems.",
 "from_text": true,

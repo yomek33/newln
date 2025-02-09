@@ -1,6 +1,10 @@
 package models
 
-import "gorm.io/gorm"
+import (
+	"encoding/json"
+
+	"gorm.io/gorm"
+)
 
 type Chat struct {
 	gorm.Model
@@ -19,9 +23,22 @@ type Message struct {
 	SenderType string `gorm:"type:sender_type;default:'user'"`
 }
 
+// チャットリストのデータ構造
 type ChatList struct {
 	gorm.Model
-	MaterialID uint   `gorm:"not null;index"`
-	Title      string `gorm:"type:varchar(255);not null"`
-	Chats      []Chat `gorm:"foreignKey:ChatListID;constraint:OnDelete:CASCADE"`
+	MaterialID         uint   `gorm:"not null;index"`
+	Title              string `gorm:"type:varchar(255);not null"`
+	Chats              []Chat `gorm:"foreignKey:ChatListID;constraint:OnDelete:CASCADE"`
+	SuggestedQuestions JSONStringArray `gorm:"type:text"` 
+}
+
+
+type JSONStringArray []string
+
+func (j *JSONStringArray) Scan(value interface{}) error {
+	return json.Unmarshal(value.([]byte), j)
+}
+
+func (j JSONStringArray) Value() (interface{}, error) {
+	return json.Marshal(j)
 }

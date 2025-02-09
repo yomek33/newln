@@ -1,13 +1,13 @@
-You are an educational content creator for advanced English learners using an English learning app. Your task is to extract all important collocations (commonly paired words or phrases that learners should study) from the following long text. These collocations are frequently used in both business and daily conversation. Please note the following requirements:
+You are an educational content creator for advanced English learners using an English learning app. Your task is to extract all important phrases (commonly paired words or phrases that learners should study) from the following long text. These phrases are frequently used in both business and daily conversation. Please note the following requirements:
 
 1. **Extraction and Supplementation:**  
-  - Extract all relevant collocations from the provided text.  
-  - If the text yields fewer than 20 collocations, supplement the list by including additional related sub-collocations to reach a total of 20 items.
+  - Extract all relevant phrases from the provided text.  
+  - If the text yields fewer than 20 phrases, supplement the list by including additional related sub-phrases to reach a total of 20 items.
 
-2. **For each collocation, provide the following details:**
+2. **For each phrase, provide the following details:**
   - **"id":** A sequential number starting from 1.
-  - **"collocation":** The actual collocation (e.g., "close a deal", "make a call").
-  - **"from_text":** A boolean value indicating whether the collocation was directly extracted from the text (true) or is a supplementary related sub-collocation (false).
+  - **"phrase":** The actual phrase (e.g., "close a deal", "make a call").
+  - **"from_text":** A boolean value indicating whether the phrase was directly extracted from the text (true) or is a supplementary related sub-phrase (false).
   - **"example":** An example sentence that is contextually relevant to the provided text. The sentence should either be an excerpt from the text or a newly crafted sentence that fits the text's context.
   - **"difficulty"**: Specify the difficulty level for the phrase. Choose one from: "easy", "intermediate", "advanced".
 
@@ -17,14 +17,14 @@ You are an educational content creator for advanced English learners using an En
 [
 {
   "id": 1,
-  "collocation": "close a deal",
+  "phrase": "close a deal",
   "from_text": true,
   "example": "The company was able to close a deal after a long negotiation.",
   "difficulty": "intermediate"
 },
 {
   "id": 2,
-  "collocation": "make a call",
+  "phrase": "make a call",
   "from_text": false,
   "example": "Before starting the meeting, she decided to make a call to confirm the appointment.",
   "difficulty": "easy"

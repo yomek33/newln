@@ -15,7 +15,7 @@ type Services struct {
 func NewServices(stores *stores.Stores, vertexService vertex.VertexService) *Services {
 	return &Services{
 		UserService:     NewUserService(stores.UserStore),
-		MaterialService: NewMaterialService(stores.MaterialStore),
+		MaterialService: NewMaterialService(stores.MaterialStore, vertexService),
 		PhraseService:   NewPhraseService(stores.PhraseStore, stores.MaterialStore, vertexService),
 		WordService:     NewWordService(stores.WordStore, stores.MaterialStore, vertexService),
 	}
