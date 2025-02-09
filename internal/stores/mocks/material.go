@@ -108,6 +108,6 @@ func (m *MockMaterialStore) UpdatewordsPhrasesCounts(materialID uint) error {
 	return nil
 }
 
-func(m *MockMaterialStore) InsertMaterialSummary(materialID uint, summary string) error{
+func (m *MockMaterialStore) InsertMaterialSummary(materialID uint, summary string) error {
 	return nil
 }

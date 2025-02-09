@@ -103,16 +103,16 @@ func (s *phraseStore) GetPhrasesByMaterialID(materialULID string) ([]models.Phra
 }
 
 func (s *phraseStore) BulkInsertPhrases(phrases []models.Phrase) error {
-    if len(phrases) == 0 {
-        return nil
-    }
+	if len(phrases) == 0 {
+		return nil
+	}
 
-    // 一括挿入 (最大100件ずつ)
-    if err := s.DB.CreateInBatches(phrases, 100).Error; err != nil {
-        return err
-    }
+	// 一括挿入 (最大100件ずつ)
+	if err := s.DB.CreateInBatches(phrases, 100).Error; err != nil {
+		return err
+	}
 
-    return s.DB.Exec(`
+	return s.DB.Exec(`
         UPDATE materials
         SET phrases_count = phrases_count + ?
         WHERE id = (
@@ -120,7 +120,6 @@ func (s *phraseStore) BulkInsertPhrases(phrases []models.Phrase) error {
         )
     `, len(phrases), phrases[0].PhraseListID).Error
 }
-
 
 func (s *phraseStore) UpdatePhraseListGenerateStatus(phraseListID uint, status string) error {
 	return s.DB.Model(&models.PhraseList{}).Where("id = ?", phraseListID).Update("generate_status", status).Error

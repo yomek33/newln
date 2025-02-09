@@ -23,9 +23,9 @@ type ChatService interface {
 }
 
 type chatService struct {
-	store stores.ChatStore
-	vertex  vertex.VertexService
-	sessions map[uint]vertex.ChatSession 
+	store    stores.ChatStore
+	vertex   vertex.VertexService
+	sessions map[uint]vertex.ChatSession
 }
 
 func NewChatService(store stores.ChatStore, vertex vertex.VertexService) ChatService {
@@ -128,7 +128,6 @@ func (s *chatService) IncrementPendingMessages(chatID uint) error {
 func (s *chatService) ClearPendingMessages(chatID uint) error {
 	return s.store.UpdatePendingMessages(chatID, 0)
 }
-
 
 // GeminiUser とのチャット生成
 func (s *chatService) GenerateSystemMessage(chatID uint, content string) (*models.Message, error) {

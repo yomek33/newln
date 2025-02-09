@@ -38,7 +38,7 @@ func (m *MockVertexClient) IsMock() bool {
 }
 
 func (m *MockVertexClient) StartChat(initialPrompt string) ChatSession {
-    return MockChatSession{}
+	return MockChatSession{}
 }
 
 type MockChatSession struct{}

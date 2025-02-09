@@ -7,7 +7,6 @@ import (
 	"gorm.io/gorm"
 )
 
-
 type ChatStore interface {
 	CreateChatList(chatList *models.ChatList) error
 	GetChatListsByMaterialID(materialID uint) ([]models.ChatList, error)
@@ -16,7 +15,7 @@ type ChatStore interface {
 	CreateMessage(message *models.Message) error
 	GetMessagesByChatID(chatID uint) ([]models.Message, error)
 	UpdatePendingMessages(chatID uint, count uint64) error
-	 GetChatByID(chatID uint) (*models.Chat, error)
+	GetChatByID(chatID uint) (*models.Chat, error)
 }
 
 type chatStore struct {
@@ -40,7 +39,6 @@ func (s *chatStore) CreateChatList(chatList *models.ChatList) error {
 
 	return s.DB.Create(chatList).Error
 }
-
 
 func (s *chatStore) GetChatListsByMaterialID(materialID uint) ([]models.ChatList, error) {
 	var chatLists []models.ChatList

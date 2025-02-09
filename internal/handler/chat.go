@@ -95,7 +95,6 @@ func (h *ChatWSHandler) SendMessageWS(c echo.Context, chatID uint, userID uuid.U
 	h.PublishChatUpdate(chatID, response.Content)
 }
 
-
 func (h *ChatWSHandler) SubscribeToChat(chatID uint) chan string {
 	h.mu.Lock()
 	defer h.mu.Unlock()

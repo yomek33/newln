@@ -24,9 +24,10 @@ var semaphore = make(chan struct{}, 3)
 
 type VertexService interface {
 	GenerateJsonContent(ctx context.Context, prompt string, jsonSchema *genai.Schema) (json.RawMessage, error)
-	StartChat(initialPrompt string) ChatSession 
+	StartChat(initialPrompt string) ChatSession
 	IsMock() bool
 }
+
 func NewVertexService() (VertexService, error) {
 	useMock := os.Getenv("USE_MOCK_GEMINI")
 	if useMock == "true" {
@@ -43,12 +44,12 @@ type RealVertexClient struct {
 }
 
 func NewRealVertexClient() (*RealVertexClient, error) {
-    ctx := context.Background()
-    client, err := genai.NewClient(ctx, projectID, location)
-    if err != nil {
-        return nil, fmt.Errorf("failed to create genai client: %w", err)
-    }
-    return &RealVertexClient{client: client}, nil
+	ctx := context.Background()
+	client, err := genai.NewClient(ctx, projectID, location)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create genai client: %w", err)
+	}
+	return &RealVertexClient{client: client}, nil
 }
 
 func (c *RealVertexClient) IsMock() bool {
@@ -78,7 +79,6 @@ func retryWithBackoff[T any](_ context.Context, maxRetries int, fn func() (T, er
 	}
 	return response, fmt.Errorf("API request failed after %d retries: %w", maxRetries, err)
 }
-
 
 // レートリミット (429) や一時的なエラー (500, 504) をチェック
 func isRetryableError(err error) bool {
@@ -155,8 +155,8 @@ type ChatSession interface {
 func (s *realChatSession) SendChatMessage(ctx context.Context, message string) (string, error) {
 	log.Printf("🚀 Sending message: %s", message)
 
-	semaphore <- struct{}{}       
-	defer func() { <-semaphore }() 
+	semaphore <- struct{}{}
+	defer func() { <-semaphore }()
 
 	response, err := retryWithBackoff[string](ctx, 5, func() (string, error) {
 		r, err := s.chat.SendMessage(ctx, genai.Text(message))

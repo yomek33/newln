@@ -36,14 +36,14 @@ type materialService struct {
 	store       stores.MaterialStore
 	mu          sync.Mutex
 	subscribers map[string][]chan string //ws
-	vertex vertex.VertexService
+	vertex      vertex.VertexService
 }
 
 func NewMaterialService(s stores.MaterialStore, vertex vertex.VertexService) MaterialService {
 	return &materialService{
 		store:       s,
 		subscribers: make(map[string][]chan string),
-		vertex: vertex,
+		vertex:      vertex,
 	}
 }
 
@@ -53,16 +53,16 @@ var (
 )
 
 func (s *materialService) CreateMaterial(material *models.Material) (*models.Material, error) {
-    if material == nil {
-        return nil, errors.New("material cannot be nil")
-    }
-    material.WordCount = CountWords(material.Content) 
-    return s.store.CreateMaterial(material)
+	if material == nil {
+		return nil, errors.New("material cannot be nil")
+	}
+	material.WordCount = CountWords(material.Content)
+	return s.store.CreateMaterial(material)
 }
 
-//TODO: utilに移動
+// TODO: utilに移動
 func CountWords(content string) int {
-    return len(strings.Fields(content))
+	return len(strings.Fields(content))
 }
 
 func (s *materialService) GetMaterialByULID(ulid string, UserID uuid.UUID) (*models.Material, error) {
@@ -192,10 +192,9 @@ func (s *materialService) UpdateHasPendingPhraseStatus(ulid string, status bool)
 	return err
 }
 
-
-//response
+// response
 type IntinalMaterialGenerateResponse struct {
-	Summary string `json:"summary"`
+	Summary                   string   `json:"summary"`
 	OptionalFollowUpQuestions []string `json:"optionalFollowUpQuestions"`
 }
 
@@ -220,13 +219,12 @@ func (s *materialService) ProcessInitialMaterialGenerate(material *models.Materi
 	intialMaterialres, err := vertex.DecodeJsonContent[[]IntinalMaterialGenerateResponse](rawResponse)
 	if err != nil {
 		logger.Error(fmt.Errorf("failed to parse JSON: %w", err))
-		return  err
+		return err
 	}
 
 	logger.Infof("✅ Genrerated summary and questions: %v", intialMaterialres)
 
 	s.store.InsertMaterialSummary(material.ID, intialMaterialres[0].Summary)
 
-	
 	return nil
 }

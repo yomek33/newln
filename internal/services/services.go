@@ -10,7 +10,7 @@ type Services struct {
 	MaterialService MaterialService
 	PhraseService   PhraseService
 	WordService     WordService
-	ChatService	 ChatService
+	ChatService     ChatService
 }
 
 func NewServices(stores *stores.Stores, vertexService vertex.VertexService) *Services {

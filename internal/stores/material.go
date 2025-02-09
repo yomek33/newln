@@ -181,6 +181,6 @@ func (m *materialStore) UpdatewordsPhrasesCounts(materialID uint) error {
 	}).Error
 }
 
-func (m *materialStore)InsertMaterialSummary(materialID uint, summary string) error {
+func (m *materialStore) InsertMaterialSummary(materialID uint, summary string) error {
 	return m.DB.Model(&models.Material{}).Where("id = ?", materialID).Update("summary", summary).Error
 }

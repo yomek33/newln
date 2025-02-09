@@ -14,10 +14,10 @@ import (
 
 // Vertexからのレスポンス
 type PhraseResponse struct {
-	Phrase string `json:"phrase"`
-	FromText    bool   `json:"from_text"`
-	Example     string `json:"example"`
-	Difficulty  string `json:"difficulty"`
+	Phrase     string `json:"phrase"`
+	FromText   bool   `json:"from_text"`
+	Example    string `json:"example"`
+	Difficulty string `json:"difficulty"`
 }
 
 func (s *phraseService) GeneratePhrases(ctx context.Context, materialID uint) ([]models.Phrase, error) {
@@ -150,12 +150,12 @@ func chunkAndDeduplicatePhrases(phrases []PhraseResponse, chunkSize int) [][]Phr
 }
 
 type PhraseWithMeaning struct {
-	Phrase string `json:"phrase"`
-	FromText    bool   `json:"from_text"`
-	Example     string `json:"example"`
-	Difficulty  string `json:"difficulty"`
-	JPMeaning   string `json:"jp_meaning"`
-	Meaning     string `json:"meaning"`
+	Phrase     string `json:"phrase"`
+	FromText   bool   `json:"from_text"`
+	Example    string `json:"example"`
+	Difficulty string `json:"difficulty"`
+	JPMeaning  string `json:"jp_meaning"`
+	Meaning    string `json:"meaning"`
 }
 
 // 意味を生成する関数
