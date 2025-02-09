@@ -17,6 +17,7 @@ type Handlers struct {
 	UserHandler     *UserHandler
 	MaterialHandler *MaterialHandler
 	jwtSecret       []byte
+	ChatWSHandler   *ChatWSHandler
 }
 
 func NewHandler(services *services.Services, jwtSecret []byte) *Handlers {
@@ -24,6 +25,7 @@ func NewHandler(services *services.Services, jwtSecret []byte) *Handlers {
 		UserHandler:     NewUserHandler(services.UserService),
 		MaterialHandler: NewMaterialHandler(services.MaterialService, services.PhraseService, services.WordService, jwtSecret),
 		jwtSecret:       jwtSecret,
+		ChatWSHandler:   NewChatWSHandler(services.ChatService),
 	}
 }
 func (h *Handlers) SetDefault(e *echo.Echo) {
@@ -48,8 +50,9 @@ func (h *Handlers) SetAPIRoutes(e *echo.Echo) {
 	// materialRoutes.GET("/:id/phrases", h.MaterialHandler.GetProcessedPhrases)
 	// materialRoutes.GET("/:id/chats", h.MaterialHandler.GetChatByMaterialID)
 
-	wsRoutes := e.Group("/api/materials")
-	wsRoutes.GET("/:ulid/progress", h.MaterialHandler.StreamMaterialProgressWS)
+	wsRoutes := e.Group("/api")
+	wsRoutes.GET("/materials/:ulid/progress", h.MaterialHandler.StreamMaterialProgressWS)
+	wsRoutes.GET("/chats/:chatID/ws", h.ChatWSHandler.ChatWebSocket)
 }
 
 func Echo() *echo.Echo {

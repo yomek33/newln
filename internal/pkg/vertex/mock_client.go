@@ -27,7 +27,6 @@ func NewMockVertexClient(responseData ...json.RawMessage) *MockVertexClient {
 func (m *MockVertexClient) GenerateJsonContent(ctx context.Context, prompt string, jsonSchema *genai.Schema) (json.RawMessage, error) {
 	fmt.Println("⚡ Using MOCK Vertex Service")
 
-	// 設定されたモックレスポンスを返す
 	if len(m.ResponseData) == 0 {
 		return json.RawMessage(`[]`), nil
 	}
@@ -36,4 +35,18 @@ func (m *MockVertexClient) GenerateJsonContent(ctx context.Context, prompt strin
 
 func (m *MockVertexClient) IsMock() bool {
 	return true
+}
+
+func (m *MockVertexClient) StartChat(initialPrompt string) ChatSession {
+    return MockChatSession{}
+}
+
+type MockChatSession struct{}
+
+func (m MockChatSession) SendChatMessage(ctx context.Context, message string) (string, error) {
+	return fmt.Sprintf("MOCK RESPONSE: %s", message), nil
+}
+
+func (m MockChatSession) Close() {
+	fmt.Println("🔚 Closing Mock Chat Session")
 }

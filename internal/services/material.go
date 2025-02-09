@@ -35,7 +35,7 @@ type MaterialService interface {
 type materialService struct {
 	store       stores.MaterialStore
 	mu          sync.Mutex
-	subscribers map[string][]chan string //sse用
+	subscribers map[string][]chan string //ws
 	vertex vertex.VertexService
 }
 

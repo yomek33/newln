@@ -10,6 +10,7 @@ type Services struct {
 	MaterialService MaterialService
 	PhraseService   PhraseService
 	WordService     WordService
+	ChatService	 ChatService
 }
 
 func NewServices(stores *stores.Stores, vertexService vertex.VertexService) *Services {
@@ -18,5 +19,6 @@ func NewServices(stores *stores.Stores, vertexService vertex.VertexService) *Ser
 		MaterialService: NewMaterialService(stores.MaterialStore, vertexService),
 		PhraseService:   NewPhraseService(stores.PhraseStore, stores.MaterialStore, vertexService),
 		WordService:     NewWordService(stores.WordStore, stores.MaterialStore, vertexService),
+		ChatService:     NewChatService(stores.ChatStore, vertexService),
 	}
 }
