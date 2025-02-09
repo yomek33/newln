@@ -7,5 +7,7 @@ services:
       - "8080:8080"
     volumes:
       - .:/app
+      - ./newln-448314-ed4973430f26.json:/app/newln-448314-ed4973430f26.json:ro
     environment:
-      DATABASE_URL: "{$SUPABASE_URI}"
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/newln-448314-ed4973430f26.json
+      - DATABASE_URL=${SUPABASE_URI}

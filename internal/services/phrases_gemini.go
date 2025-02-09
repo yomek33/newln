@@ -9,12 +9,12 @@ import (
 
 	"github.com/yomek33/newln/internal/logger"
 	"github.com/yomek33/newln/internal/models"
-	"github.com/yomek33/newln/internal/pkg/gemini"
+	"github.com/yomek33/newln/internal/pkg/vertex"
 )
 
-// Geminiからのレスポンス
+// Vertexからのレスポンス
 type PhraseResponse struct {
-	Collocation string `json:"collocation"`
+	Phrase string `json:"phrase"`
 	FromText    bool   `json:"from_text"`
 	Example     string `json:"example"`
 	Difficulty  string `json:"difficulty"`
@@ -22,7 +22,6 @@ type PhraseResponse struct {
 
 func (s *phraseService) GeneratePhrases(ctx context.Context, materialID uint) ([]models.Phrase, error) {
 	logger.Infof("🚀 Start GeneratePhrases for materialID: %v", materialID)
-
 	promptFile, err := os.ReadFile("./internal/services/prompts/generate_phrases.txt")
 	if err != nil {
 		logger.Error(fmt.Errorf("failed to read prompt file: %w", err))
@@ -38,22 +37,24 @@ func (s *phraseService) GeneratePhrases(ctx context.Context, materialID uint) ([
 
 	prompt = strings.ReplaceAll(prompt, "{{TEXT}}", material.Content)
 
-	jsonSchema := gemini.GenerateSchema[[]PhraseResponse]()
-	rawResponse, err := s.geminiClient.GenerateJsonContent(ctx, prompt, jsonSchema)
+	jsonSchema := vertex.GenerateSchema[[]PhraseResponse]()
+	rawResponse, err := s.vertexClient.GenerateJsonContent(ctx, prompt, jsonSchema)
 	if err != nil {
 		logger.Error(fmt.Errorf("failed to generate phrases: %w", err))
 		return nil, err
 	}
 
 	// JSONリストを正しくデコード
-	phraseResponses, err := gemini.DecodeJsonContent[[]PhraseResponse](rawResponse)
+	phraseResponses, err := vertex.DecodeJsonContent[[]PhraseResponse](rawResponse)
 	if err != nil {
 		logger.Error(fmt.Errorf("failed to parse JSON: %w", err))
 		return nil, err
 	}
 
-	// 5個ずつに分割
-	chunks := chunkAndDeduplicatePhrases(phraseResponses, 5)
+	logger.Infof("✅ Genrerated Phrases: %v", phraseResponses)
+
+	// quotaが小さすぎる。。。
+	chunks := chunkAndDeduplicatePhrases(phraseResponses, 30)
 	logger.Infof("✅ Split phrases into %d chunks for processing", len(chunks))
 
 	// 並列処理で意味を生成
@@ -69,7 +70,7 @@ func (s *phraseService) GeneratePhrases(ctx context.Context, materialID uint) ([
 
 			var phraseList []string
 			for _, phrase := range phrasesChunk {
-				phraseList = append(phraseList, phrase.Collocation)
+				phraseList = append(phraseList, phrase.Phrase)
 			}
 			phrasesStr := strings.Join(phraseList, ", ")
 
@@ -118,7 +119,6 @@ func (s *phraseService) GeneratePhrases(ctx context.Context, materialID uint) ([
 			finished = true
 		}
 	}
-
 	logger.Infof("🎉 Generated %d phrases for materialID: %v", len(allPhrases), materialID)
 	return allPhrases, nil
 }
@@ -129,10 +129,10 @@ func chunkAndDeduplicatePhrases(phrases []PhraseResponse, chunkSize int) [][]Phr
 	var currentChunk []PhraseResponse
 
 	for _, phrase := range phrases {
-		if _, exists := seen[phrase.Collocation]; exists {
+		if _, exists := seen[phrase.Phrase]; exists {
 			continue
 		}
-		seen[phrase.Collocation] = true
+		seen[phrase.Phrase] = true
 
 		currentChunk = append(currentChunk, phrase)
 
@@ -150,7 +150,7 @@ func chunkAndDeduplicatePhrases(phrases []PhraseResponse, chunkSize int) [][]Phr
 }
 
 type PhraseWithMeaning struct {
-	Collocation string `json:"collocation"`
+	Phrase string `json:"phrase"`
 	FromText    bool   `json:"from_text"`
 	Example     string `json:"example"`
 	Difficulty  string `json:"difficulty"`
@@ -167,14 +167,14 @@ func (s *phraseService) GenerateMeaning(ctx context.Context, phrasesStr string) 
 	prompt := string(promptFile)
 	prompt = strings.ReplaceAll(prompt, "{{INPUT}}", phrasesStr)
 
-	jsonSchema := gemini.GenerateSchema[[]PhraseWithMeaning]()
+	jsonSchema := vertex.GenerateSchema[[]PhraseWithMeaning]()
 
-	rawResponse, err := s.geminiClient.GenerateJsonContent(ctx, prompt, jsonSchema)
+	rawResponse, err := s.vertexClient.GenerateJsonContent(ctx, prompt, jsonSchema)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate meanings: %w", err)
 	}
 
-	meaningResponses, err := gemini.DecodeJsonContent[[]PhraseWithMeaning](rawResponse)
+	meaningResponses, err := vertex.DecodeJsonContent[[]PhraseWithMeaning](rawResponse)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse JSON: %w", err)
 	}
@@ -182,7 +182,7 @@ func (s *phraseService) GenerateMeaning(ctx context.Context, phrasesStr string) 
 	var phrases []models.Phrase
 	for _, res := range meaningResponses {
 		phrases = append(phrases, models.Phrase{
-			Text:       res.Collocation,
+			Text:       res.Phrase,
 			Meaning:    res.Meaning,
 			JPMeaning:  res.JPMeaning,
 			Example:    res.Example,

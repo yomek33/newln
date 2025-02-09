@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"strconv"
@@ -10,7 +9,7 @@ import (
 	"github.com/yomek33/newln/internal/handler"
 	"github.com/yomek33/newln/internal/models"
 	"github.com/yomek33/newln/internal/models/migrations"
-	"github.com/yomek33/newln/internal/pkg/gemini"
+	"github.com/yomek33/newln/internal/pkg/vertex"
 	"github.com/yomek33/newln/internal/services"
 	"github.com/yomek33/newln/internal/stores"
 
@@ -33,10 +32,9 @@ func main() {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	// Gemini クライアントの作成 (Mock or Real)
-	geminiClient, err := gemini.NewGeminiService(context.Background(), cfg.GeminiAPIKey)
+	vertexClient, err := vertex.NewVertexService()
 	if err != nil {
-		log.Fatalf("Failed to initialize Gemini service: %v", err)
+		log.Fatalf("Failed to create VertexClient: %v", err)
 	}
 
 	// Build DSN
@@ -51,7 +49,7 @@ func main() {
 	app := &application{DB: db}
 
 	stores := stores.NewStores(app.DB)
-	services := services.NewServices(stores, geminiClient)
+	services := services.NewServices(stores, vertexClient)
 
 	h := handler.NewHandler(services, cfg.JwtSecret)
 

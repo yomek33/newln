@@ -153,7 +153,6 @@ func (s *materialService) PublishMaterialUpdate(materialULID string, message str
 	}
 }
 
-
 func (s *materialService) UpdateMaterialField(ulid string, field string, value interface{}) error {
 	logger.Infof("🛠 Updating field %s to %v for material %s", field, value, ulid)
 	err := s.store.UpdateMaterialField(ulid, field, value)
@@ -162,7 +161,6 @@ func (s *materialService) UpdateMaterialField(ulid string, field string, value i
 	}
 	return err
 }
-
 
 func (s *materialService) UpdateHasPendingWordStatus(ulid string, status bool) error {
 	logger.Infof("🛠 Updating hasPendingWordStatus to %v for material %s", status, ulid)

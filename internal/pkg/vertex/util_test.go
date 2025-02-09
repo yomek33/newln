@@ -1,11 +1,11 @@
-package gemini
+package vertex
 
 import (
 	"encoding/json"
 	"reflect"
 	"testing"
 
-	"google.golang.org/genai"
+	"cloud.google.com/go/vertexai/genai"
 )
 
 type TestStruct struct {

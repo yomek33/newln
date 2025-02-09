@@ -9,7 +9,7 @@ import (
 
 	"github.com/yomek33/newln/internal/logger"
 	"github.com/yomek33/newln/internal/models"
-	"github.com/yomek33/newln/internal/pkg/gemini"
+	"github.com/yomek33/newln/internal/pkg/vertex"
 )
 
 type WordResponse struct {
@@ -42,15 +42,15 @@ func (s *wordService) GenerateWords(ctx context.Context, materialID uint) ([]mod
 	}
 
 	prompt = strings.ReplaceAll(prompt, "{{TEXT}}", material.Content)
-	jsonSchema := gemini.GenerateSchema[[]WordResponse]()
-	rawResponse, err := s.geminiClient.GenerateJsonContent(ctx, prompt, jsonSchema)
+	jsonSchema := vertex.GenerateSchema[[]WordResponse]()
+	rawResponse, err := s.vertexClient.GenerateJsonContent(ctx, prompt, jsonSchema)
 	if err != nil {
 		logger.Error(fmt.Errorf("failed to generate words: %w", err))
 		return nil, err
 	}
 
 	// JSONをデコード
-	wordResponses, err := gemini.DecodeJsonContent[[]WordResponse](rawResponse)
+	wordResponses, err := vertex.DecodeJsonContent[[]WordResponse](rawResponse)
 	if err != nil {
 		logger.Error(fmt.Errorf("failed to parse JSON: %w", err))
 		return nil, err
@@ -58,8 +58,8 @@ func (s *wordService) GenerateWords(ctx context.Context, materialID uint) ([]mod
 
 	logger.Infof("✅ Retrieved %d words: %v", len(wordResponses), wordResponses)
 
-	// 単語リストを5個ずつに分割して並列処理
-	chunks := chunkWords(wordResponses, 5)
+	// quota小さすぎる。。。
+	chunks := chunkWords(wordResponses, 30)
 	logger.Infof("✅ Split words into %d chunks for processing", len(chunks))
 
 	var wg sync.WaitGroup
@@ -160,14 +160,14 @@ func (s *wordService) GenerateWordMeanings(ctx context.Context, wordsChunk []Wor
 	prompt := string(promptFile)
 	prompt = strings.ReplaceAll(prompt, "{{TEXT}}", wordsStr)
 
-	jsonSchema := gemini.GenerateSchema[[]WordWithMeaning]()
+	jsonSchema := vertex.GenerateSchema[[]WordWithMeaning]()
 
-	rawResponse, err := s.geminiClient.GenerateJsonContent(ctx, prompt, jsonSchema)
+	rawResponse, err := s.vertexClient.GenerateJsonContent(ctx, prompt, jsonSchema)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate meanings: %w", err)
 	}
 
-	meaningResponses, err := gemini.DecodeJsonContent[[]WordWithMeaning](rawResponse)
+	meaningResponses, err := vertex.DecodeJsonContent[[]WordWithMeaning](rawResponse)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse JSON: %w", err)
 	}
