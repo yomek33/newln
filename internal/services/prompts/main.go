@@ -63,7 +63,7 @@ package main
 // 					"id": {
 // 						Type: genai.TypeInteger,
 // 					},
-// 					"collocation": {
+// 					"phrase": {
 // 						Type: genai.TypeString,
 // 					},
 // 					"from_text": {
@@ -76,7 +76,7 @@ package main
 // 						Type: genai.TypeString,
 // 					},
 // 				},
-// 				Required: []string{"id", "collocation", "from_text", "example", "difficulty"},
+// 				Required: []string{"id", "phrase", "from_text", "example", "difficulty"},
 // 			},
 // 		}
 // 		prompt = strings.ReplaceAll(prompt, "{{TEXT}}", sampleText)

@@ -14,7 +14,7 @@ import (
 
 // Vertexからのレスポンス
 type PhraseResponse struct {
-	Collocation string `json:"collocation"`
+	Phrase string `json:"phrase"`
 	FromText    bool   `json:"from_text"`
 	Example     string `json:"example"`
 	Difficulty  string `json:"difficulty"`
@@ -22,7 +22,6 @@ type PhraseResponse struct {
 
 func (s *phraseService) GeneratePhrases(ctx context.Context, materialID uint) ([]models.Phrase, error) {
 	logger.Infof("🚀 Start GeneratePhrases for materialID: %v", materialID)
-	logger.Infof("⏳ context in GeneratePhrases: %v", ctx.Err())
 	promptFile, err := os.ReadFile("./internal/services/prompts/generate_phrases.txt")
 	if err != nil {
 		logger.Error(fmt.Errorf("failed to read prompt file: %w", err))
@@ -52,6 +51,8 @@ func (s *phraseService) GeneratePhrases(ctx context.Context, materialID uint) ([
 		return nil, err
 	}
 
+	logger.Infof("✅ Genrerated Phrases: %v", phraseResponses)
+
 	// quotaが小さすぎる。。。
 	chunks := chunkAndDeduplicatePhrases(phraseResponses, 30)
 	logger.Infof("✅ Split phrases into %d chunks for processing", len(chunks))
@@ -69,7 +70,7 @@ func (s *phraseService) GeneratePhrases(ctx context.Context, materialID uint) ([
 
 			var phraseList []string
 			for _, phrase := range phrasesChunk {
-				phraseList = append(phraseList, phrase.Collocation)
+				phraseList = append(phraseList, phrase.Phrase)
 			}
 			phrasesStr := strings.Join(phraseList, ", ")
 
@@ -118,7 +119,6 @@ func (s *phraseService) GeneratePhrases(ctx context.Context, materialID uint) ([
 			finished = true
 		}
 	}
-	logger.Infof("⏳ context in GeneratePhrases end: %v", ctx.Err())
 	logger.Infof("🎉 Generated %d phrases for materialID: %v", len(allPhrases), materialID)
 	return allPhrases, nil
 }
@@ -129,10 +129,10 @@ func chunkAndDeduplicatePhrases(phrases []PhraseResponse, chunkSize int) [][]Phr
 	var currentChunk []PhraseResponse
 
 	for _, phrase := range phrases {
-		if _, exists := seen[phrase.Collocation]; exists {
+		if _, exists := seen[phrase.Phrase]; exists {
 			continue
 		}
-		seen[phrase.Collocation] = true
+		seen[phrase.Phrase] = true
 
 		currentChunk = append(currentChunk, phrase)
 
@@ -150,7 +150,7 @@ func chunkAndDeduplicatePhrases(phrases []PhraseResponse, chunkSize int) [][]Phr
 }
 
 type PhraseWithMeaning struct {
-	Collocation string `json:"collocation"`
+	Phrase string `json:"phrase"`
 	FromText    bool   `json:"from_text"`
 	Example     string `json:"example"`
 	Difficulty  string `json:"difficulty"`
@@ -182,7 +182,7 @@ func (s *phraseService) GenerateMeaning(ctx context.Context, phrasesStr string) 
 	var phrases []models.Phrase
 	for _, res := range meaningResponses {
 		phrases = append(phrases, models.Phrase{
-			Text:       res.Collocation,
+			Text:       res.Phrase,
 			Meaning:    res.Meaning,
 			JPMeaning:  res.JPMeaning,
 			Example:    res.Example,

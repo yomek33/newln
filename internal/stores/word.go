@@ -76,7 +76,23 @@ func (s *wordStore) GetWordsByMaterialID(materialULID string) ([]models.Word, er
 }
 
 func (s *wordStore) BulkInsertWords(words []models.Word) error {
-	return s.DB.CreateInBatches(words, 100).Error
+    if len(words) == 0 {
+        return nil
+    }
+
+    // 一括挿入 (最大100件ずつ)
+    if err := s.DB.CreateInBatches(words, 100).Error; err != nil {
+        return err
+    }
+
+    // words_count を一括更新 (+N する)
+    return s.DB.Exec(`
+        UPDATE materials
+        SET words_count = words_count + ?
+        WHERE id = (
+            SELECT material_id FROM word_lists WHERE id = ?
+        )
+    `, len(words), words[0].WordListID).Error
 }
 
 func (s *wordStore) UpdateWordListGenerateStatus(wordListID uint, status string) error {

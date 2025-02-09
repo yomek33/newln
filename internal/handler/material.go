@@ -104,7 +104,6 @@ func (h *MaterialHandler) GetMaterialByULID(c echo.Context) error {
 		return respondWithError(c, http.StatusNotFound, ErrMaterialNotFound)
 	}
 
-	logger.Infof("Retrieved material Material HasPendingPhraseList;%v", material.HasPendingPhraseList)
 	return c.JSON(http.StatusOK, material)
 }
 
