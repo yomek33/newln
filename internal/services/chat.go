@@ -130,7 +130,7 @@ func (s *chatService) ClearPendingMessages(chatID uint) error {
 }
 
 
-// GeminiUser とのチャットを開始
+// GeminiUser とのチャット生成
 func (s *chatService) GenerateSystemMessage(chatID uint, content string) (*models.Message, error) {
 
 	return s.CreateMessage(chatID, models.GeminiUserID, content, models.SenderSystem)

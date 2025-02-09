@@ -17,7 +17,7 @@ type Phrase struct {
 	Meaning 	string `gorm:"type:text"`
 	JPMeaning 	string `gorm:"type:text"`
 	Example 	string `gorm:"type:text"`
-	FromText 	bool `gorm:"type:boolean;default:false"`
+	FromText 	bool `gorm:"type:boolean;default:false" json:"-"`
 	Difficulty 	string `gorm:"type:difficulty_level;default:'easy'"`
 }
 type PhraseList struct {

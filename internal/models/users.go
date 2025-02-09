@@ -11,12 +11,12 @@ import (
 type User struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	DeletedAt sql.NullTime `gorm:"index"`
+	DeletedAt sql.NullTime `gorm:"index" json:"-"`
 	UserID    uuid.UUID    `gorm:"type:uuid;default:uuid_generate_v4();primaryKey"`
 	Name      string       `gorm:"type:varchar(255);"`
-	Materials []Material   `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE"`
+	Materials []Material   `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE" json:"-"`
 	Email     string       `gorm:"type:varchar(255);unique"`
-	Password  string       `gorm:"type:varchar(255)"`
+	Password  string       `gorm:"type:varchar(255)" json:"-"`
 }
 
 type Progress struct {

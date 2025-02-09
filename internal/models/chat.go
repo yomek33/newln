@@ -11,7 +11,7 @@ type Chat struct {
 	gorm.Model
 	Detail         string `gorm:"type:text"`
 	ChatListID     uint   `gorm:"not null;index"`
-	PendingMessage uint64
+	PendingMessage uint64	`gorm:"type:bigint;default:0" json:"-"`
 	Messages       []Message `gorm:"foreignKey:ChatID;constraint:OnDelete:CASCADE"`
 }
 
@@ -35,7 +35,7 @@ type ChatList struct {
 	MaterialID         uint   `gorm:"not null;index"`
 	Title              string `gorm:"type:varchar(255);not null"`
 	Chats              []Chat `gorm:"foreignKey:ChatListID;constraint:OnDelete:CASCADE"`
-	SuggestedQuestions JSONStringArray `gorm:"type:text"` 
+	SuggestedQuestions JSONStringArray `gorm:"type:text" json:"-"` 
 }
 
 
