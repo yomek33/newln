@@ -59,7 +59,8 @@ func (s *materialStore) GetMaterialByULID(ulid string, userID uuid.UUID) (*model
 	err := s.DB.
 		Preload("WordLists.Words").
 		Preload("PhraseLists.Phrases").
-		Preload("ChatLists.Chats").
+		Preload("ChatList.Chats.Messages").
+
 		Where("ul_id = ? AND user_id = ?", ulid, userID).
 		First(&material).
 		Error
@@ -73,7 +74,7 @@ func (s *materialStore) GetMaterialByULID(ulid string, userID uuid.UUID) (*model
 
 func (s *materialStore) GetMaterialByID(id uint) (*models.Material, error) {
 	var material models.Material
-	err := s.DB.Preload("WordLists").Preload("PhraseLists").Preload("ChatLists").First(&material, id).Error
+	err := s.DB.Preload("WordLists").Preload("PhraseLists").Preload("ChatList").First(&material, id).Error
 	return &material, err
 
 }

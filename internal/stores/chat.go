@@ -8,9 +8,9 @@ import (
 )
 
 type ChatStore interface {
-	CreateChatList(chatList *models.ChatList) error
-	GetChatListsByMaterialID(materialID uint) ([]models.ChatList, error)
-	CreateChat(chat *models.Chat) error
+	CreateChatList(chatList *models.ChatList) (*models.ChatList, error)
+	GetChatListByMaterialID(materialID uint) (*models.ChatList, error)
+	CreateChat(chat *models.Chat) (*models.Chat, error)
 	GetChatsByChatListID(chatListID uint) ([]models.Chat, error)
 	CreateMessage(message *models.Message) error
 	GetMessagesByChatID(chatID uint) ([]models.Message, error)
@@ -26,39 +26,51 @@ func NewChatStore(db *gorm.DB) ChatStore {
 	return &chatStore{DB: db}
 }
 
-func (s *chatStore) CreateChatList(chatList *models.ChatList) error {
-	if chatList == nil {
-		return errors.New("chatList cannot be nil")
-	}
-	if chatList.MaterialID == 0 {
-		return errors.New("chatList must be linked to a material")
-	}
-	if chatList.Title == "" {
-		return errors.New("chatList title cannot be empty")
-	}
+func (s *chatStore) CreateChatList(chatList *models.ChatList) (*models.ChatList, error) {
+    if chatList == nil {
+        return nil, errors.New("chatList cannot be nil")
+    }
+    if chatList.MaterialID == 0 {
+        return nil, errors.New("chatList must be linked to a material")
+    }
+    if chatList.Title == "" {
+        return nil, errors.New("chatList title cannot be empty")
+    }
 
-	return s.DB.Create(chatList).Error
+    if err := s.DB.Create(chatList).Error; err != nil {
+        return nil, err
+    }
+
+    if err := s.DB.Preload("Chats").Find(chatList).Error; err != nil {
+        return nil, err
+    }
+
+    return chatList, nil
 }
 
-func (s *chatStore) GetChatListsByMaterialID(materialID uint) ([]models.ChatList, error) {
-	var chatLists []models.ChatList
+func (s *chatStore) GetChatListByMaterialID(materialID uint) (*models.ChatList, error) {
+	var ChatList models.ChatList
 
 	err := s.DB.Where("material_id = ?", materialID).
 		Preload("Chats"). // 関連する Chats も取得
-		Find(&chatLists).Error
+		Find(&ChatList).Error
 
-	return chatLists, err
+	return &ChatList, err
 }
 
-func (s *chatStore) CreateChat(chat *models.Chat) error {
+func (s *chatStore) CreateChat(chat *models.Chat) (*models.Chat, error) {
 	if chat == nil {
-		return errors.New("chat cannot be nil")
+		return nil, errors.New("chat cannot be nil")
 	}
 	if chat.ChatListID == 0 {
-		return errors.New("chat must be linked to a chat list")
+		return nil, errors.New("chat must be linked to a chat list")
 	}
 
-	return s.DB.Create(chat).Error
+	if err := s.DB.Create(chat).Error; err != nil {
+		return nil, err
+	}
+
+	return chat, nil
 }
 
 func (s *chatStore) GetChatsByChatListID(chatListID uint) ([]models.Chat, error) {

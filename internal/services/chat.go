@@ -2,7 +2,9 @@ package services
 
 import (
 	"errors"
+	"sync"
 
+	"cloud.google.com/go/vertexai/genai"
 	"github.com/google/uuid"
 	"github.com/yomek33/newln/internal/models"
 	"github.com/yomek33/newln/internal/pkg/vertex"
@@ -11,27 +13,41 @@ import (
 
 type ChatService interface {
 	CreateChatList(materialID uint) (*models.ChatList, error)
-	GetChatListsByMaterialID(materialID uint) ([]models.ChatList, error)
+	GetChatListByMaterialID(materialID uint) (*models.ChatList, error)
 	CreateChat(chatListID uint, userID uuid.UUID, detail string) (*models.Chat, error)
 	GetChatsByChatListID(chatListID uint) ([]models.Chat, error)
 	CreateMessage(chatID uint, userID uuid.UUID, content string, senderType models.SenderType) (*models.Message, error)
 	GetMessagesByChatID(chatID uint) ([]models.Message, error)
 	IncrementPendingMessages(chatID uint) error
 	ClearPendingMessages(chatID uint) error
-	StartChat(chatListID uint, userID uuid.UUID) (*models.Chat, error)
-	SendMessage(chatID uint, userID uuid.UUID, message string) (*models.Message, error)
+	// StartChat(chatListID uint, chat *models.Chat) (*models.Chat, error)
+	// SendMessage(chatID uint, userID uuid.UUID, message string) (*models.Message, error)
+	CheckChatHasMessages(chatID uint) (bool, error)
+	 CreateFirstChat(chatListID uint) (*models.Chat, []*genai.Content, error)
+	  ContinueChat(chatID uint, history []ChatMessage, message string) ([]ChatMessage, error)
 }
 
 type chatService struct {
 	store    stores.ChatStore
 	vertex   vertex.VertexService
 	sessions map[uint]vertex.ChatSession
+	mu       sync.Mutex
 }
 
-func NewChatService(store stores.ChatStore, vertex vertex.VertexService) ChatService {
-	return &chatService{store: store, vertex: vertex}
+func NewChatService(store stores.ChatStore, vertexService vertex.VertexService) ChatService {
+	return &chatService{
+		store:    store,
+		vertex:   vertexService,
+		sessions: make(map[uint]vertex.ChatSession),
+	}
 }
 
+func (s *chatService) StartChatSession(chatID uint, session vertex.ChatSession) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.sessions[chatID] = session 
+}
 func (s *chatService) CreateChatList(materialID uint) (*models.ChatList, error) {
 	//TODO: title
 	title := "Chat List"
@@ -47,12 +63,29 @@ func (s *chatService) CreateChatList(materialID uint) (*models.ChatList, error) 
 		Title:      title,
 	}
 
-	err := s.store.CreateChatList(chatList)
+
+	chatList, err := s.store.CreateChatList(chatList)
+	if err != nil {
+		return nil, err
+	}
+	chat := &models.Chat{
+		ChatListID: chatList.ID,
+	}
+	chat, err = s.store.CreateChat(chat)
+	if err != nil {
+		return nil, err
+	}
+	
+	chatList.Chats = append(chatList.Chats, *chat)
 	return chatList, err
 }
 
-func (s *chatService) GetChatListsByMaterialID(materialID uint) ([]models.ChatList, error) {
-	return s.store.GetChatListsByMaterialID(materialID)
+func (s *chatService) GetChatListByMaterialID(materialID uint) (*models.ChatList, error) {
+	chatList, err:= s.store.GetChatListByMaterialID(materialID)
+	if err != nil {
+		return nil, err
+	}
+	return chatList, nil
 }
 
 func (s *chatService) CreateChat(chatListID uint, userID uuid.UUID, detail string) (*models.Chat, error) {
@@ -68,7 +101,7 @@ func (s *chatService) CreateChat(chatListID uint, userID uuid.UUID, detail strin
 		Detail:     detail,
 	}
 
-	err := s.store.CreateChat(chat)
+	chat, err := s.store.CreateChat(chat)
 	return chat, err
 }
 
@@ -134,3 +167,13 @@ func (s *chatService) GenerateSystemMessage(chatID uint, content string) (*model
 
 	return s.CreateMessage(chatID, models.GeminiUserID, content, models.SenderSystem)
 }
+
+
+func (s *chatService) CheckChatHasMessages(chatID uint) (bool, error) {
+	messages, err := s.store.GetMessagesByChatID(chatID)
+	if err != nil {
+		return false, err
+	}
+	return len(messages) > 0, nil
+}
+

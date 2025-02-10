@@ -24,7 +24,7 @@ type Material struct {
 	PhrasesCount         int          `gorm:"type:int;default:0"`
 	WordLists            []WordList   `gorm:"foreignKey:MaterialID;constraint:OnDelete:CASCADE"`
 	PhraseLists          []PhraseList `gorm:"foreignKey:MaterialID;constraint:OnDelete:CASCADE"`
-	ChatLists            ChatList     `gorm:"foreignKey:MaterialID;constraint:OnDelete:CASCADE"`
+	ChatList            ChatList     `gorm:"foreignKey:MaterialID;constraint:OnDelete:CASCADE"`
 	Summary              string       `gorm:"type:text" json:"-"`
 	WordCount            int          `gorm:"type:int;default:0" `
 }

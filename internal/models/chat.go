@@ -10,7 +10,7 @@ import (
 type Chat struct {
 	gorm.Model
 	Detail         string    `gorm:"type:text"`
-	ChatListID     uint      `gorm:"not null;index"`
+	ChatListID     uint      `gorm:";index"`
 	PendingMessage uint64    `gorm:"type:bigint;default:0" json:"-"`
 	Messages       []Message `gorm:"foreignKey:ChatID;constraint:OnDelete:CASCADE"`
 }

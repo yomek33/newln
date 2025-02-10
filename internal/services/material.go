@@ -30,6 +30,7 @@ type MaterialService interface {
 	UpdateMaterialField(ulid string, field string, value interface{}) error
 	UpdateHasPendingWordStatus(ulid string, status bool) error
 	UpdateHasPendingPhraseStatus(ulid string, status bool) error
+	ProcessInitialMaterialGenerate(materialULID string, userID uuid.UUID) error 
 }
 
 type materialService struct {
@@ -199,9 +200,10 @@ type IntinalMaterialGenerateResponse struct {
 }
 
 // Generate summary and questions for material
-func (s *materialService) ProcessInitialMaterialGenerate(material *models.Material) error {
+func (s *materialService) ProcessInitialMaterialGenerate(materialULID string, userID uuid.UUID) error {
+	material, _ := s.store.GetMaterialByULID(materialULID, userID)
 	logger.Infof("🔥 Processing initial material generate for materialID: %v", material.ID)
-	promptFile, err := os.ReadFile("./prompts/summary_q.txt")
+	promptFile, err := os.ReadFile("./internal/services/prompts/summary_q.txt")
 	if err != nil {
 		logger.Errorf("Error reading prompt file: %v", err)
 		return fmt.Errorf("failed to read prompt file: %w", err)
@@ -215,7 +217,7 @@ func (s *materialService) ProcessInitialMaterialGenerate(material *models.Materi
 		logger.Errorf("Error generating summary and questions: %v", err)
 		return fmt.Errorf("failed to generate summary and questions: %w", err)
 	}
-
+	
 	intialMaterialres, err := vertex.DecodeJsonContent[[]IntinalMaterialGenerateResponse](rawResponse)
 	if err != nil {
 		logger.Error(fmt.Errorf("failed to parse JSON: %w", err))
