@@ -17,13 +17,15 @@ type Handlers struct {
 	UserHandler     *UserHandler
 	MaterialHandler *MaterialHandler
 	jwtSecret       []byte
+	ChatWSHandler   *ChatWSHandler
 }
 
 func NewHandler(services *services.Services, jwtSecret []byte) *Handlers {
 	return &Handlers{
 		UserHandler:     NewUserHandler(services.UserService),
-		MaterialHandler: NewMaterialHandler(services.MaterialService, services.PhraseService, services.WordService, jwtSecret),
+		MaterialHandler: NewMaterialHandler(services.MaterialService, services.PhraseService, services.WordService, services.ChatService, jwtSecret),
 		jwtSecret:       jwtSecret,
+		ChatWSHandler:   NewChatWSHandler(services.ChatService, jwtSecret),
 	}
 }
 func (h *Handlers) SetDefault(e *echo.Echo) {
@@ -47,9 +49,10 @@ func (h *Handlers) SetAPIRoutes(e *echo.Echo) {
 	materialRoutes.GET("/:ulid/status", h.MaterialHandler.CheckMaterialStatus)
 	// materialRoutes.GET("/:id/phrases", h.MaterialHandler.GetProcessedPhrases)
 	// materialRoutes.GET("/:id/chats", h.MaterialHandler.GetChatByMaterialID)
-
-	wsRoutes := e.Group("/api/materials")
-	wsRoutes.GET("/:ulid/progress", h.MaterialHandler.StreamMaterialProgressWS)
+	api.POST("/chat/:ulid", h.ChatWSHandler.chatHandler)
+	wsRoutes := e.Group("/api")
+	wsRoutes.GET("/materials/:ulid/progress", h.MaterialHandler.StreamMaterialProgressWS)
+	//wsRoutes.GET("/chats/:chatID/ws", h.ChatWSHandler.ChatWebSocket)
 }
 
 func Echo() *echo.Echo {

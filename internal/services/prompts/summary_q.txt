@@ -1,0 +1,19 @@
+You are provided with the following article:
+
+{{TEXT}}
+
+Your task is to:
+1. Generate a concise summary that captures the main points, themes, and implications of the article.
+2. Create an optional list of 3 to 5 follow-up questions that encourage deeper discussion or exploration of the article’s content. If the article is long, include questions that ask what the reader has learned from the text or inquire about specific details mentioned in the article. These questions should be natural, relevant, and thought-provoking, aimed at guiding further conversation without dictating specific responses.
+
+Please format your output as valid JSON with the following structure:
+
+{
+  "Summary": "[Your summary here]",
+  "OptionalFollowUpQuestions": [
+    "[Question 1]",
+    "[Question 2]",
+    "[Question 3]"
+    // (Include additional questions if necessary)
+  ]
+}

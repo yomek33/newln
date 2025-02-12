@@ -29,6 +29,8 @@ type MaterialStore interface {
 	UpdateMaterialField(ulid string, field string, value interface{}) error
 	UpdateHasPendingWordStatus(ulid string, status bool) error
 	UpdateHasPendingPhraseStatus(ulid string, status bool) error
+	UpdatewordsPhrasesCounts(materialID uint) error
+	InsertMaterialSummary(materialID uint, summary string) error
 }
 
 type materialStore struct {
@@ -57,7 +59,8 @@ func (s *materialStore) GetMaterialByULID(ulid string, userID uuid.UUID) (*model
 	err := s.DB.
 		Preload("WordLists.Words").
 		Preload("PhraseLists.Phrases").
-		Preload("ChatLists.Chats").
+		Preload("ChatList.Chats.Messages").
+
 		Where("ul_id = ? AND user_id = ?", ulid, userID).
 		First(&material).
 		Error
@@ -71,7 +74,7 @@ func (s *materialStore) GetMaterialByULID(ulid string, userID uuid.UUID) (*model
 
 func (s *materialStore) GetMaterialByID(id uint) (*models.Material, error) {
 	var material models.Material
-	err := s.DB.Preload("WordLists").Preload("PhraseLists").Preload("ChatLists").First(&material, id).Error
+	err := s.DB.Preload("WordLists").Preload("PhraseLists").Preload("ChatList").First(&material, id).Error
 	return &material, err
 
 }
@@ -149,4 +152,36 @@ func (s *materialStore) UpdateHasPendingWordStatus(ulid string, status bool) err
 
 func (s *materialStore) UpdateHasPendingPhraseStatus(ulid string, status bool) error {
 	return s.DB.Model(&models.Material{}).Where("ul_id = ?", ulid).Update("has_pending_phrase_list", status).Error
+}
+
+func (m *materialStore) UpdatewordsPhrasesCounts(materialID uint) error {
+	var wordsCount, phrasesCount int64
+
+	// Word のカウント
+	m.DB.Model(&models.Word{}).
+		Joins("LEFT JOIN word_lists ON word_lists.id = words.word_list_id").
+		Where("word_lists.material_id = ?", materialID).
+		Count(&wordsCount)
+
+	// Phrase のカウント
+	m.DB.Model(&models.Phrase{}).
+		Joins("LEFT JOIN phrase_lists ON phrase_lists.id = phrases.phrase_list_id").
+		Where("phrase_lists.material_id = ?", materialID).
+		Count(&phrasesCount)
+
+	// 対応する Material を取得
+	var material models.Material
+	if err := m.DB.First(&material, materialID).Error; err != nil {
+		return err
+	}
+
+	// Material のカウントを更新
+	return m.DB.Model(&material).Updates(map[string]interface{}{
+		"words_count":   wordsCount,
+		"phrases_count": phrasesCount,
+	}).Error
+}
+
+func (m *materialStore) InsertMaterialSummary(materialID uint, summary string) error {
+	return m.DB.Model(&models.Material{}).Where("id = ?", materialID).Update("summary", summary).Error
 }

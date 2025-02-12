@@ -103,3 +103,11 @@ func (m *MockMaterialStore) UpdateHasPendingWordStatus(ulid string, status bool)
 func (m *MockMaterialStore) UpdateHasPendingPhraseStatus(ulid string, status bool) error {
 	return nil
 }
+
+func (m *MockMaterialStore) UpdatewordsPhrasesCounts(materialID uint) error {
+	return nil
+}
+
+func (m *MockMaterialStore) InsertMaterialSummary(materialID uint, summary string) error {
+	return nil
+}

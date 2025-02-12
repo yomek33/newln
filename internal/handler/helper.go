@@ -22,6 +22,7 @@ func getUserIDFromContext(c echo.Context) (uuid.UUID, error) {
 		logger.Errorf(ErrInvalidUserToken)
 		return uuid.Nil, errors.New(ErrInvalidUserToken)
 	}
+	logger.Infof("UserID: %s", userIDStr)
 
 	userID, err := uuid.Parse(userIDStr)
 	if err != nil {

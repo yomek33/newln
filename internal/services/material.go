@@ -1,12 +1,16 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"os"
+	"strings"
 	"sync"
 
 	"github.com/yomek33/newln/internal/logger"
 	"github.com/yomek33/newln/internal/models"
+	"github.com/yomek33/newln/internal/pkg/vertex"
 	"github.com/yomek33/newln/internal/stores"
 
 	"github.com/google/uuid"
@@ -26,18 +30,21 @@ type MaterialService interface {
 	UpdateMaterialField(ulid string, field string, value interface{}) error
 	UpdateHasPendingWordStatus(ulid string, status bool) error
 	UpdateHasPendingPhraseStatus(ulid string, status bool) error
+	ProcessInitialMaterialGenerate(materialULID string, userID uuid.UUID) error 
 }
 
 type materialService struct {
 	store       stores.MaterialStore
 	mu          sync.Mutex
-	subscribers map[string][]chan string //sse用
+	subscribers map[string][]chan string //ws
+	vertex      vertex.VertexService
 }
 
-func NewMaterialService(s stores.MaterialStore) MaterialService {
+func NewMaterialService(s stores.MaterialStore, vertex vertex.VertexService) MaterialService {
 	return &materialService{
 		store:       s,
 		subscribers: make(map[string][]chan string),
+		vertex:      vertex,
 	}
 }
 
@@ -50,7 +57,13 @@ func (s *materialService) CreateMaterial(material *models.Material) (*models.Mat
 	if material == nil {
 		return nil, errors.New("material cannot be nil")
 	}
+	material.WordCount = CountWords(material.Content)
 	return s.store.CreateMaterial(material)
+}
+
+// TODO: utilに移動
+func CountWords(content string) int {
+	return len(strings.Fields(content))
 }
 
 func (s *materialService) GetMaterialByULID(ulid string, UserID uuid.UUID) (*models.Material, error) {
@@ -178,4 +191,42 @@ func (s *materialService) UpdateHasPendingPhraseStatus(ulid string, status bool)
 		logger.Errorf("❌ Failed to update hasPendingPhraseStatus for material %s: %v", ulid, err)
 	}
 	return err
+}
+
+// response
+type IntinalMaterialGenerateResponse struct {
+	Summary                   string   `json:"summary"`
+	OptionalFollowUpQuestions []string `json:"optionalFollowUpQuestions"`
+}
+
+// Generate summary and questions for material
+func (s *materialService) ProcessInitialMaterialGenerate(materialULID string, userID uuid.UUID) error {
+	material, _ := s.store.GetMaterialByULID(materialULID, userID)
+	logger.Infof("🔥 Processing initial material generate for materialID: %v", material.ID)
+	promptFile, err := os.ReadFile("./internal/services/prompts/summary_q.txt")
+	if err != nil {
+		logger.Errorf("Error reading prompt file: %v", err)
+		return fmt.Errorf("failed to read prompt file: %w", err)
+	}
+	prompt := string(promptFile)
+	prompt = strings.ReplaceAll(prompt, "{{TEXT}}", material.Content)
+
+	jsonSchema := vertex.GenerateSchema[[]IntinalMaterialGenerateResponse]()
+	rawResponse, err := s.vertex.GenerateJsonContent(context.Background(), prompt, jsonSchema)
+	if err != nil {
+		logger.Errorf("Error generating summary and questions: %v", err)
+		return fmt.Errorf("failed to generate summary and questions: %w", err)
+	}
+	
+	intialMaterialres, err := vertex.DecodeJsonContent[[]IntinalMaterialGenerateResponse](rawResponse)
+	if err != nil {
+		logger.Error(fmt.Errorf("failed to parse JSON: %w", err))
+		return err
+	}
+
+	logger.Infof("✅ Genrerated summary and questions: %v", intialMaterialres)
+
+	s.store.InsertMaterialSummary(material.ID, intialMaterialres[0].Summary)
+
+	return nil
 }

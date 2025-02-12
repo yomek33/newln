@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"log"
 	"math"
-	"os"
 	"time"
 
 	"math/rand"
 
 	"cloud.google.com/go/vertexai/genai"
+	"github.com/yomek33/newln/internal/models"
 )
 
 const (
@@ -24,18 +24,23 @@ var semaphore = make(chan struct{}, 3)
 
 type VertexService interface {
 	GenerateJsonContent(ctx context.Context, prompt string, jsonSchema *genai.Schema) (json.RawMessage, error)
-	IsMock() bool
+	// StartChat(initialPrompt string) ChatSession
+	// IsMock() bool
 }
 
 func NewVertexService() (VertexService, error) {
-	useMock := os.Getenv("USE_MOCK_GEMINI")
-	if useMock == "true" {
-		fmt.Println("⚡ Using MOCK Vertex Service")
-		return NewMockVertexClient(), nil
-	}
+	//useMock := os.Getenv("USE_MOCK_GEMINI")
+	// if useMock == "true" {
+	// 	fmt.Println("⚡ Using MOCK Vertex Service")
+	// 	return NewMockVertexClient(), nil
+	// }
 
 	fmt.Println("🌍 Using REAL Vertex Service")
-	return NewRealVertexClient()
+	client, err := NewRealVertexClient()
+	if err != nil {
+		return nil, err
+	}
+	return client, nil
 }
 
 type RealVertexClient struct {
@@ -43,21 +48,23 @@ type RealVertexClient struct {
 }
 
 func NewRealVertexClient() (*RealVertexClient, error) {
-    ctx := context.Background()
-    client, err := genai.NewClient(ctx, projectID, location)
-    if err != nil {
-        return nil, fmt.Errorf("failed to create genai client: %w", err)
-    }
-    return &RealVertexClient{client: client}, nil
+	ctx := context.Background()
+	client, err := genai.NewClient(ctx, projectID, location)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create genai client: %w", err)
+	}
+	return &RealVertexClient{client: client}, nil
 }
 
 func (c *RealVertexClient) IsMock() bool {
 	return false
 }
 
-func retryWithBackoff(_ context.Context, maxRetries int, fn func() (json.RawMessage, error)) (json.RawMessage, error) {
+// 汎用リトライ関数（ジェネリクスを使用）
+func retryWithBackoff[T any](_ context.Context, maxRetries int, fn func() (T, error)) (T, error) {
+
 	var err error
-	var response json.RawMessage
+	var response T
 
 	for i := 0; i < maxRetries; i++ {
 		response, err = fn()
@@ -72,10 +79,10 @@ func retryWithBackoff(_ context.Context, maxRetries int, fn func() (json.RawMess
 			log.Printf("⚠️ API error: %v. Retrying in %v...", err, waitTime+jitter)
 			time.Sleep(waitTime + jitter)
 		} else {
-			return nil, err // リトライ不要なエラーは即終了
+			return response, err // リトライ不要なエラーは即終了
 		}
 	}
-	return nil, fmt.Errorf("API request failed after %d retries: %w", maxRetries, err)
+	return response, fmt.Errorf("API request failed after %d retries: %w", maxRetries, err)
 }
 
 // レートリミット (429) や一時的なエラー (500, 504) をチェック
@@ -121,6 +128,90 @@ func (c *RealVertexClient) GenerateJsonContent(ctx context.Context, prompt strin
 		}
 
 		log.Printf("✅ Successfully received response from Vertex API")
-		return json.RawMessage(res.Candidates[0].Content.Parts[0].(genai.Text)), nil
+		part, ok := res.Candidates[0].Content.Parts[0].(genai.Text)
+		if !ok {
+			return nil, fmt.Errorf("unexpected response format from Vertex AI")
+		}
+		return json.RawMessage(part), nil
+
 	})
+}
+
+type ChatSession interface {
+	SendMessage(ctx context.Context, messages []*genai.Content) ([]*genai.Content, error)
+	GetHistory() []*genai.Content
+}
+
+
+// SimpleChatSession 構造体
+type SimpleChatSession struct {
+	service     VertexService
+	History     []*genai.Content
+	m           *genai.GenerativeModel
+	sender      models.SenderType
+	chatSession *genai.ChatSession
+}
+
+// **NewSimpleChatSession を修正**
+func NewSimpleChatSession(service VertexService, initialPrompt string) *SimpleChatSession {
+	// VertexService から GenerativeModel を取得
+	realClient, ok := service.(*RealVertexClient)
+	if !ok {
+		log.Fatal("❌ VertexService is not a RealVertexClient")
+	}
+
+	model := realClient.client.GenerativeModel(modelName)
+
+	// 初期プロンプトをセット
+	model.SystemInstruction = &genai.Content{
+		Role:  "system",
+		Parts: []genai.Part{genai.Text(initialPrompt)},
+	}
+
+	// チャットセッションを開始
+	cs := model.StartChat()
+
+	// **最初の AI 発言は追加しない**
+	return &SimpleChatSession{
+		service:     service,
+		chatSession: cs,
+		History:    nil,
+		m:           model,
+		sender:      models.SenderSystem,
+	}
+}
+
+func (scs *SimpleChatSession) SendMessage(ctx context.Context, messages []*genai.Content) ([]*genai.Content, error) {
+    for _, message := range messages {
+        scs.History = append(scs.History, message)
+    }
+
+    // AI に問い合わせ
+	var lastMessage string
+	if len(messages) > 0 {
+		if text, ok := messages[len(messages)-1].Parts[0].(genai.Text); ok {
+			lastMessage = string(text)
+		} else {
+			return nil, fmt.Errorf("unexpected part type in message")
+		}
+	}
+    resp, err := scs.chatSession.SendMessage(ctx, genai.Text(lastMessage))
+    if err != nil {
+        return nil, err
+    }
+
+    // AI の応答を履歴に追加
+    if len(resp.Candidates) > 0 && resp.Candidates[0].Content != nil {
+        reply := resp.Candidates[0].Content.Parts[0].(genai.Text)
+        scs.History = append(scs.History, &genai.Content{
+            Role:  "system",
+            Parts: []genai.Part{reply},
+        })
+    }
+
+    return scs.History, nil
+}
+// **GetHistory の修正**
+func (scs *SimpleChatSession) GetHistory() []*genai.Content {
+	return scs.History
 }
